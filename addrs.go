@@ -60,22 +60,47 @@ func ParseWebsocketNetAddr(a net.Addr) (ma.Multiaddr, error) {
 	if !ok {
 		return nil, fmt.Errorf("not a websocket address")
 	}
+	return FromURL(wsa.URL)
+}
+
+func FromURL(a *url.URL) (ma.Multiaddr, error) {
+	wsa := &Addr{URL: a}
 
 	var (
 		tcpma ma.Multiaddr
 		err   error
-		port  int
+		port  = wsa.Port()
 		host  = wsa.Hostname()
+		path  = wsa.Path
+		sche  string
 	)
 
-	// Get the port
-	if portStr := wsa.Port(); portStr != "" {
-		port, err = strconv.Atoi(portStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse port '%q': %s", portStr, err)
+	switch wsa.Scheme {
+	case "wss", "https":
+		if port == "" {
+			port = "443"
 		}
-	} else {
-		return nil, fmt.Errorf("invalid port in url: '%q'", wsa.URL)
+		if path == "" {
+			sche = "/wss"
+		} else {
+			sche = fmt.Sprintf("/x-parity-wss/%s", url.QueryEscape(path))
+		}
+	case "ws", "http":
+		if port == "" {
+			port = "80"
+		}
+		if path == "" {
+			sche = "/ws"
+		} else {
+			sche = fmt.Sprintf("/x-parity-ws/%s", url.QueryEscape(path))
+		}
+	default:
+		return nil, fmt.Errorf("invalid scheme in url: '%q'", wsa.URL)
+	}
+
+	iport, err := strconv.Atoi(port)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse port '%q': %s", port, err)
 	}
 
 	// NOTE: Ignoring IPv6 zones...
@@ -84,24 +109,23 @@ func ParseWebsocketNetAddr(a net.Addr) (ma.Multiaddr, error) {
 		// Assume IP address
 		tcpma, err = manet.FromNetAddr(&net.TCPAddr{
 			IP:   ip,
-			Port: port,
+			Port: iport,
 		})
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		// Assume DNS name
-		tcpma, err = ma.NewMultiaddr(fmt.Sprintf("/dns/%s/tcp/%d", host, port))
+		tcpma, err = ma.NewMultiaddr(fmt.Sprintf("/dns/%s/tcp/%s", host, port))
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	wsma, err := ma.NewMultiaddr("/" + wsa.Scheme)
+	wsma, err := ma.NewMultiaddr(sche)
 	if err != nil {
 		return nil, err
 	}
-
 	return tcpma.Encapsulate(wsma), nil
 }
 

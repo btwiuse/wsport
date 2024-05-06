@@ -54,14 +54,73 @@ func TestParseWebsocketNetAddr(t *testing.T) {
 		t.Fatalf("expect \"not a websocket address\", got \"%s\"", err)
 	}
 
-	wsAddr := NewAddrWithScheme("127.0.0.1:5555", false)
-	parsed, err := ParseWebsocketNetAddr(wsAddr)
-	if err != nil {
-		t.Fatal(err)
+	cases := []struct {
+		addr     *Addr
+		expected string
+	}{
+		{
+			NewAddrWithScheme("127.0.0.1:5555", false),
+			"/ip4/127.0.0.1/tcp/5555/ws",
+		},
+		{
+			&Addr{
+				URL: &url.URL{
+					Scheme: "ws",
+					Host:   "google.com:80",
+				},
+			},
+			"/dns/google.com/tcp/80/ws",
+		},
+		{
+			&Addr{
+				URL: &url.URL{
+					Scheme: "wss",
+					Host:   "google.com",
+				},
+			},
+			"/dns/google.com/tcp/443/wss",
+		},
+		{
+			&Addr{
+				URL: &url.URL{
+					Scheme: "ws",
+					Host:   "google.com:80",
+					Path:   "/ws",
+				},
+			},
+			"/dns/google.com/tcp/80/x-parity-ws/%2Fws",
+		},
+		{
+			&Addr{
+				URL: &url.URL{
+					Scheme: "wss",
+					Host:   "google.com",
+					Path:   "/ws",
+				},
+			},
+			"/dns/google.com/tcp/443/x-parity-wss/%2Fws",
+		},
+		{
+			&Addr{
+				URL: &url.URL{
+					Scheme: "ws",
+					Host:   "google.com:3234",
+					Path:   "/ws",
+				},
+			},
+			"/dns/google.com/tcp/3234/x-parity-ws/%2Fws",
+		},
 	}
 
-	if parsed.String() != "/ip4/127.0.0.1/tcp/5555/ws" {
-		t.Fatalf("expected \"/ip4/127.0.0.1/tcp/5555/ws\", got \"%s\"", parsed.String())
+	for i, c := range cases {
+		parsed, err := ParseWebsocketNetAddr(c.addr)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if parsed.String() != c.expected {
+			t.Fatalf("[%d] expected \"%s\", got \"%s\"", i, c.expected, parsed.String())
+		}
 	}
 }
 

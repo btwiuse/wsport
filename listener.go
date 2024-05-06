@@ -57,16 +57,40 @@ func newListener(a ma.Multiaddr, tlsConf *tls.Config) (*listener, error) {
 		scheme = "wss"
 	}
 
-	// dial
-	relayAddr := fmt.Sprintf("%s://%s%s?x-websocket-upgrade=1", scheme, lnaddr, parsed.path)
-	nl, err := websocket.Listen(context.Background(), relayAddr)
+	var nl net.Listener
+	var localListen bool = strings.HasPrefix(lnaddr, "0.0.0.0") || strings.HasPrefix(lnaddr, "[::]") || strings.HasPrefix(lnaddr, "127.0.0.1") || strings.HasPrefix(lnaddr, "::1") || strings.HasPrefix(lnaddr, "localhost")
+
+	if localListen {
+		// listen locally
+		nl, err = net.Listen("tcp", lnaddr)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// dial remote
+		relayAddr := fmt.Sprintf("%s://%s%s?x-websocket-upgrade=1", scheme, lnaddr, parsed.path)
+		nl, err = websocket.Listen(context.Background(), relayAddr)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	lu, err := netAddr2URL(nl.Addr())
 	if err != nil {
 		return nil, err
 	}
 
-	laddr, err := netAddr2Multiaddr(nl.Addr())
+	laddr, err := url2Multiaddr(lu)
 	if err != nil {
 		return nil, err
+	}
+
+	first, _ := ma.SplitFirst(a)
+	// Don't resolve dns addresses.
+	// We want to be able to announce domain names, so the peer can validate the TLS certificate.
+	if c := first.Protocol().Code; c == ma.P_DNS || c == ma.P_DNS4 || c == ma.P_DNS6 || c == ma.P_DNSADDR {
+		_, last := ma.SplitFirst(laddr)
+		laddr = first.Encapsulate(last)
 	}
 
 	ln := &listener{
@@ -79,44 +103,21 @@ func newListener(a ma.Multiaddr, tlsConf *tls.Config) (*listener, error) {
 	return ln, nil
 }
 
-func netAddr2Multiaddr(addr net.Addr) (ma.Multiaddr, error) {
-	u, err := url.Parse(addr.Network() + "://" + addr.String())
-	if err != nil {
-		return nil, err
+func netAddr2URL(addr net.Addr) (*url.URL, error) {
+	if addr.Network() == "tcp" {
+		return url.Parse("http://" + addr.String())
 	}
+	return url.Parse(addr.Network() + "://" + addr.String())
+}
 
-	port := u.Port()
-	if port == "" {
-		if u.Scheme == "ws" {
-			port = "80"
-		} else if u.Scheme == "wss" {
-			port = "443"
-		}
-	}
-
-	switch addr.Network() {
-	case "ws":
-		// convert to multiaddr, assume ws on 80
-		if u.Path == "" {
-			return ma.StringCast(fmt.Sprintf("/dns4/%s/tcp/%s/ws", u.Hostname(), port)), nil
-		}
-
-		return ma.StringCast(fmt.Sprintf("/dns4/%s/tcp/%s/x-parity-ws/%s", u.Hostname(), port, url.QueryEscape(u.Path))), nil
-	case "wss":
-		// convert to multiaddr, assume wss on 443
-		if u.Path == "" {
-			return ma.StringCast(fmt.Sprintf("/dns4/%s/tcp/%s/wss", u.Hostname(), port)), nil
-		}
-
-		return ma.StringCast(fmt.Sprintf("/dns4/%s/tcp/%s/x-parity-wss/%s", u.Hostname(), port, url.QueryEscape(u.Path))), nil
-	}
-
-	return nil, fmt.Errorf("unsupported network: %s", addr.Network())
+// deprecated: superceded by FromURL
+func url2Multiaddr(u *url.URL) (ma.Multiaddr, error) {
+	return FromURL(u)
 }
 
 func (l *listener) serve() {
-	defer close(l.closed)
 	http.Serve(l.nl, l)
+	close(l.closed)
 }
 
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -136,15 +137,22 @@ func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type MyConn struct {
 	net.Conn
+	Secure bool
 }
 
 func (c *MyConn) LocalMultiaddr() ma.Multiaddr {
-	return ma.StringCast("/ip4/127.0.0.1/tcp/418")
+	if !c.Secure {
+		return ma.StringCast("/ip4/127.0.0.1/tcp/418/ws")
+	}
+	return ma.StringCast("/ip4/127.0.0.1/tcp/418/wss")
 }
 
 // fix websocket/unknown-unknown
 func (c *MyConn) RemoteMultiaddr() ma.Multiaddr {
-	return ma.StringCast("/ip4/127.0.0.1/tcp/404")
+	if !c.Secure {
+		return ma.StringCast("/ip4/127.0.0.1/tcp/404/ws")
+	}
+	return ma.StringCast("/ip4/127.0.0.1/tcp/404/wss")
 }
 
 func (l *listener) Accept() (manet.Conn, error) {
@@ -154,7 +162,10 @@ func (l *listener) Accept() (manet.Conn, error) {
 			return nil, transport.ErrListenerClosed
 		}
 
-		mnc := &MyConn{Conn: c}
+		mnc := &MyConn{
+			Conn:   c,
+			Secure: l.isWss,
+		}
 		return mnc, nil
 	case <-l.closed:
 		return nil, transport.ErrListenerClosed
@@ -166,8 +177,11 @@ func (l *listener) Addr() net.Addr {
 }
 
 func (l *listener) Close() error {
-	err := l.nl.Close()
+	err := l.nl.Close() // cause serve() to return, closing l.closed
 	<-l.closed
+	if err == nil {
+		return nil
+	}
 	if strings.Contains(err.Error(), "use of closed network connection") {
 		return transport.ErrListenerClosed
 	}
