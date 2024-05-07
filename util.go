@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/libp2p/go-libp2p"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 // ListenAddrStrings configures libp2p to listen on the given (unparsed)
@@ -11,11 +12,7 @@ import (
 func ListenAddrStrings(s ...string) libp2p.Option {
 	return func(cfg *libp2p.Config) error {
 		for _, addrstr := range s {
-			u, err := url.Parse(addrstr)
-			if err != nil {
-				return err
-			}
-			a, err := FromURL(u)
+			a, err := FromString(addrstr)
 			if err != nil {
 				return err
 			}
@@ -23,4 +20,12 @@ func ListenAddrStrings(s ...string) libp2p.Option {
 		}
 		return nil
 	}
+}
+
+func FromString(s string) (ma.Multiaddr, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		return nil, err
+	}
+	return FromURL(u)
 }
