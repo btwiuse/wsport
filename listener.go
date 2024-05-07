@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/transport"
 	"github.com/webteleport/webteleport/transport/websocket"
 
+	"github.com/btwiuse/wsconn"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 )
@@ -25,7 +26,7 @@ type listener struct {
 	laddr ma.Multiaddr
 
 	closed   chan struct{}
-	incoming chan *Conn
+	incoming chan net.Conn
 }
 
 func (pwma *parsedWebsocketMultiaddr) toMultiaddr() ma.Multiaddr {
@@ -97,7 +98,7 @@ func newListener(a ma.Multiaddr, tlsConf *tls.Config) (*listener, error) {
 		nl:       nl,
 		isWss:    parsed.isWSS,
 		laddr:    laddr,
-		incoming: make(chan *Conn),
+		incoming: make(chan net.Conn),
 		closed:   make(chan struct{}),
 	}
 	return ln, nil
@@ -121,14 +122,14 @@ func (l *listener) serve() {
 }
 
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
+	c, err := wsconn.Wrconn(w, r)
 	if err != nil {
 		// The upgrader writes a response for us.
 		return
 	}
 
 	select {
-	case l.incoming <- NewConn(c, l.isWss):
+	case l.incoming <- c:
 	case <-l.closed:
 		c.Close()
 	}

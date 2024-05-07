@@ -55,6 +55,12 @@ func Run(args []string) error {
 				time.Sleep(time.Duration(i) * time.Second)
 			}
 		},
+		onConnected: func(n network.Network, c network.Conn) {
+			log.Println("[Connected]", c.ID())
+		},
+		onDisconnected: func(n network.Network, c network.Conn) {
+			log.Println("[Disconnected]", c.ID())
+		},
 	}
 
 	host.Network().Notify(notifiee)

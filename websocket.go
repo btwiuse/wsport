@@ -4,9 +4,6 @@ package wsport
 import (
 	"context"
 	"crypto/tls"
-	"net"
-	"net/http"
-	"time"
 
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -16,8 +13,6 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	mafmt "github.com/multiformats/go-multiaddr-fmt"
 	manet "github.com/multiformats/go-multiaddr/net"
-
-	ws "github.com/gorilla/websocket"
 )
 
 // WsFmt is multiaddr formatter for WsProtocol
@@ -61,14 +56,6 @@ func init() {
 	manet.RegisterToNetAddr(ConvertWebsocketMultiaddrToNetAddr, "wss")
 	manet.RegisterToNetAddr(ConvertWebsocketMultiaddrToNetAddr, "x-parity-ws")
 	manet.RegisterToNetAddr(ConvertWebsocketMultiaddrToNetAddr, "x-parity-wss")
-}
-
-// Default gorilla upgrader
-var upgrader = ws.Upgrader{
-	// Allow requests from *all* origins.
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
 }
 
 type Option func(*WebsocketTransport) error
@@ -200,40 +187,18 @@ func (t *WebsocketTransport) maDial(ctx context.Context, raddr ma.Multiaddr) (ma
 		return nil, err
 	}
 	isWss := wsurl.Scheme == "wss"
-	dialer := ws.Dialer{HandshakeTimeout: 30 * time.Second}
-	if isWss {
-		sni := ""
-		sni, err = raddr.ValueForProtocol(ma.P_SNI)
-		if err != nil {
-			sni = ""
-		}
 
-		if sni != "" {
-			copytlsClientConf := t.tlsClientConf.Clone()
-			copytlsClientConf.ServerName = sni
-			dialer.TLSClientConfig = copytlsClientConf
-			ipAddr := wsurl.Host
-			// Setting the NetDial because we already have the resolved IP address, so we don't want to do another resolution.
-			// We set the `.Host` to the sni field so that the host header gets properly set.
-			dialer.NetDial = func(network, address string) (net.Conn, error) {
-				tcpAddr, err := net.ResolveTCPAddr(network, ipAddr)
-				if err != nil {
-					return nil, err
-				}
-				return net.DialTCP("tcp", nil, tcpAddr)
-			}
-			wsurl.Host = sni + ":" + wsurl.Port()
-		} else {
-			dialer.TLSClientConfig = t.tlsClientConf
-		}
+	sni, err := raddr.ValueForProtocol(ma.P_SNI)
+	if err == nil {
+		wsurl.Host = sni + ":" + wsurl.Port()
 	}
 
-	wscon, _, err := dialer.DialContext(ctx, wsurl.String(), nil)
+	wsconn, err := DialConn(ctx, wsurl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	mnc := &MyConn{Conn: NewConn(wscon, isWss)}
+	mnc := &MyConn{Conn: wsconn, Secure: isWss}
 	return mnc, nil
 }
 
