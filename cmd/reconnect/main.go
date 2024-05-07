@@ -21,8 +21,10 @@ func getEnv(key, def string) string {
 	return def
 }
 
+var RELAY = getEnv("RELAY", "https://example.com")
+
 func Run(args []string) error {
-	relay, err := wsport.FromString(getEnv("RELAY", "https://example.com"))
+	relay, err := wsport.FromString(RELAY)
 	if err != nil {
 		return err
 	}
