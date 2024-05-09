@@ -127,7 +127,6 @@ func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	println("ServeHTTP", c.RemoteAddr().String())
 
 	select {
 	case l.incoming <- c:

@@ -47,7 +47,7 @@ func Run(args []string) error {
 		onListenClose: func(n network.Network, a ma.Multiaddr) {
 			log.Println("[ListenClose]", a)
 			for i := 0; ; i++ {
-				err := host.Network().Listen(relay)
+				err := n.Listen(relay)
 				if err == nil {
 					break
 				}
