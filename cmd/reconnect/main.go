@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -38,14 +39,24 @@ func Run(args []string) error {
 
 	notifiee := &Notifiee{
 		onListen: func(n network.Network, a ma.Multiaddr) {
-			log.Println("[Listen]", a)
-			log.Println("host is online. libp2p-peer addresses:")
-			for _, a := range host.Addrs() {
-				log.Println(fmt.Sprintf("%s/p2p/%s", a, host.ID()))
+			slog.Info(
+				"[Listen]",
+				"ma", fmt.Sprintf("%s/p2p/%s", a, host.ID()),
+				// "localAddrs", host.Addrs(),
+			)
+			for i, addr := range host.Addrs() {
+				log.Println("localAddr", i, addr)
 			}
 		},
 		onListenClose: func(n network.Network, a ma.Multiaddr) {
-			log.Println("[ListenClose]", a)
+			slog.Info(
+				"[ListenClose]",
+				"ma", fmt.Sprintf("%s/p2p/%s", a, host.ID()),
+				// "localAddrs", host.Addrs(),
+			)
+			for i, addr := range host.Addrs() {
+				log.Println("localAddr", i, addr)
+			}
 			for i := 0; ; i++ {
 				err := n.Listen(relay)
 				if err == nil {
@@ -56,10 +67,32 @@ func Run(args []string) error {
 			}
 		},
 		onConnected: func(n network.Network, c network.Conn) {
-			log.Println("[Connected]", c.ID())
+			slog.Info(
+				"[Connected]",
+				"connId", c.ID(),
+				"connRemotePeerId", c.RemotePeer(),
+				// "peers", host.Peerstore().Peers(),
+				// "connLocalPeerId", c.LocalPeer(),
+				// "connLocalMa", c.LocalMultiaddr(),
+				// "connRemoteMa", c.RemoteMultiaddr(),
+			)
+			for i, addr := range host.Peerstore().Peers() {
+				log.Println("peer", i, addr, n.Connectedness(addr).String())
+			}
 		},
 		onDisconnected: func(n network.Network, c network.Conn) {
-			log.Println("[Disconnected]", c.ID())
+			slog.Info(
+				"[Disconnected]",
+				"connId", c.ID(),
+				"connRemotePeerId", c.RemotePeer(),
+				// "peers", host.Peerstore().Peers(),
+				// "connLocalPeerId", c.LocalPeer(),
+				// "connLocalMa", c.LocalMultiaddr(),
+				// "connRemoteMa", c.RemoteMultiaddr(),
+			)
+			for i, addr := range host.Peerstore().Peers() {
+				log.Println("peer", i, addr, n.Connectedness(addr).String())
+			}
 		},
 	}
 
