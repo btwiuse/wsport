@@ -124,9 +124,10 @@ func (l *listener) serve() {
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := wsconn.Wrconn(w, r)
 	if err != nil {
-		// The upgrader writes a response for us.
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	println("ServeHTTP", c.RemoteAddr().String())
 
 	select {
 	case l.incoming <- c:
