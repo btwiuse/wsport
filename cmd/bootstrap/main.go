@@ -105,23 +105,7 @@ func Run(args []string) error {
 		return nil
 	}
 
-	for _, peerAddr := range args {
-		log.Println("Connecting to bootstrap", peerAddr)
-		peerMa, err := ma.NewMultiaddr(peerAddr)
-		if err != nil {
-			return err
-		}
-
-		peerInfo, err := peer.AddrInfoFromP2pAddr(peerMa)
-		if err != nil {
-			return err
-		}
-
-		err = host.Connect(context.Background(), *peerInfo)
-		if err != nil {
-			return err
-		}
-	}
+	go KeepBootnode(host, args)
 
 	if len(args) > 1 {
 		// Bootstrap the dht
@@ -149,6 +133,44 @@ func Run(args []string) error {
 		}
 	}()
 
+	return nil
+}
+
+func KeepBootnode(host host.Host, addrs []string) {
+	for {
+		err := Bootnode(host, addrs)
+		if err != nil {
+			log.Println("KeepBootnode", err)
+		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func Bootnode(host host.Host, addrs []string) error {
+	for _, peerAddr := range addrs {
+		peerMa, err := ma.NewMultiaddr(peerAddr)
+		if err != nil {
+			return err
+		}
+
+		_, peerID := peer.SplitAddr(peerMa)
+
+		if host.Network().Connectedness(peerID) == network.Connected {
+			continue
+		}
+
+		log.Println("Connecting to bootstrap", peerAddr)
+
+		peerInfo, err := peer.AddrInfoFromP2pAddr(peerMa)
+		if err != nil {
+			return err
+		}
+
+		err = host.Connect(context.Background(), *peerInfo)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
