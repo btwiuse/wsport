@@ -22,6 +22,7 @@ type listener struct {
 	// The Go standard library sets the http.Server.TLSConfig no matter if this is a WS or WSS,
 	// so we can't rely on checking if server.TLSConfig is set.
 	isWss bool
+	pid string
 
 	laddr ma.Multiaddr
 
@@ -101,6 +102,11 @@ func newListener(a ma.Multiaddr, tlsConf *tls.Config) (*listener, error) {
 		incoming: make(chan net.Conn),
 		closed:   make(chan struct{}),
 	}
+
+	if pid, err := a.ValueForProtocol(ma.P_P2P); err == nil {
+		ln.pid = pid
+	}
+
 	return ln, nil
 }
 
@@ -122,6 +128,10 @@ func (l *listener) serve() {
 }
 
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.ToLower(r.Header.Get("Upgrade")) != "websocket" {
+		http.Error(w, l.pid, http.StatusOK)
+		return
+	}
 	c, err := wsconn.Wrconn(w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

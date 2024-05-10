@@ -109,11 +109,16 @@ func New(u transport.Upgrader, rcmgr network.ResourceManager, opts ...Option) (*
 }
 
 func (t *WebsocketTransport) CanDial(a ma.Multiaddr) bool {
+	withoutP2p, c := ma.SplitLast(a)
+	if c.Protocol().Code == ma.P_P2P {
+		println(withoutP2p.String())
+		return dialMatcher.Matches(withoutP2p)
+	}
 	return dialMatcher.Matches(a)
 }
 
 func (t *WebsocketTransport) Protocols() []int {
-	return []int{ma.P_WS, ma.P_WSS, wsx.P_WS_WITH_PATH, wsx.P_WSS_WITH_PATH}
+	return []int{ma.P_WS, ma.P_WSS, wsx.P_WS_WITH_PATH, wsx.P_WSS_WITH_PATH, ma.P_P2P}
 }
 
 func (t *WebsocketTransport) Proxy() bool {
