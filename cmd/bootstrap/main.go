@@ -14,11 +14,12 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
+
 	// "github.com/libp2p/go-libp2p/core/routing"
 
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
-	"github.com/libp2p/go-libp2p-kad-dht"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
 
 	"github.com/btwiuse/wsport"
@@ -84,8 +85,6 @@ func Run(args []string) error {
 			context.Background(),
 			host,
 			dht.Datastore(dstore),
-			// dht.Mode(dht.ModeAuto),
-			// dht.Mode(dht.ModeAutoServer),
 			dht.Mode(dht.ModeServer),
 		)
 		if err != nil {
@@ -124,10 +123,12 @@ func Run(args []string) error {
 		}
 	}
 
-	// Bootstrap the host
-	err = ipfsdht.Bootstrap(context.Background())
-	if err != nil {
-		return err
+	if len(args) > 1 {
+		// Bootstrap the dht
+		err = ipfsdht.Bootstrap(context.Background())
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
