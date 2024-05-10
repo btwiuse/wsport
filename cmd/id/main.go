@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"log"
@@ -9,9 +10,11 @@ import (
 
 	// We need to import libp2p's libraries that we use in this project.
 	"github.com/libp2p/go-libp2p"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/routing"
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/btwiuse/wsport"
@@ -58,6 +61,13 @@ func makeRandomHost(port int) host.Host {
 		wsport.ListenAddrStrings(addr),
 		// libp2p.ListenAddrs(maddr),
 		libp2p.Identity(privKey),
+		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
+			return dht.New(
+				context.Background(),
+				h,
+				dht.Mode(dht.ModeAutoServer),
+			)
+		}),
 	)
 	if err != nil {
 		log.Fatalln(err)
