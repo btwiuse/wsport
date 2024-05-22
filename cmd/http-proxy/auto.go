@@ -10,11 +10,7 @@ import (
 
 var autoHandler = gost.AutoHandler()
 
-// streamHandler is our function to handle any libp2p-net streams that belong
-// to our protocol. The streams should contain an HTTP request which we need
-// to parse, make on behalf of the original node, and then write the response
-// on the stream, before closing it.
-func connectHandler(stream network.Stream) {
+func AutoHandler(stream network.Stream) {
 	// Remember to close the stream when we are done.
 	c := &conn{stream}
 	defer stream.Close()
