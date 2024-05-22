@@ -18,7 +18,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peerstore"
 
 	"github.com/btwiuse/wsport"
-	_ "github.com/btwiuse/x-parity-wss"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 )

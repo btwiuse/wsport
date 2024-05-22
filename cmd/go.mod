@@ -142,7 +142,7 @@ require (
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/webteleport/utils v0.2.14 // indirect
-	github.com/webteleport/webteleport v0.5.28 // indirect
+	github.com/webteleport/webteleport v0.5.31 // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.1 // indirect
 	github.com/xtaci/smux v1.5.16 // indirect
