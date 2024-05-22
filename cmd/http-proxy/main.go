@@ -17,7 +17,6 @@ import (
 
 	"github.com/btwiuse/wsport"
 	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr/net"
 )
 
 func getEnv(key, def string) string {
@@ -57,9 +56,8 @@ func makeRandomHost(port int) host.Host {
 // HTTP server which tunnels the requests to a destination peer running
 // ProxyService too.
 type ProxyService struct {
-	host      host.Host
-	dest      peer.ID
-	proxyAddr ma.Multiaddr
+	host host.Host
+	dest peer.ID
 }
 
 // NewProxyService attaches a proxy service to the given libp2p Host.
@@ -72,7 +70,7 @@ type ProxyService struct {
 // perform the proxied http requests it receives from a different peer.
 //
 // The addresses for the dest peer should be part of the host's peerstore.
-func NewProxyService(h host.Host, proxyAddr ma.Multiaddr, dest peer.ID) *ProxyService {
+func NewProxyService(h host.Host, dest peer.ID) *ProxyService {
 	// We let our host know that it needs to handle streams tagged with the
 	// protocol id that we have defined, and then handle them to
 	// our own streamHandling function.
@@ -85,16 +83,14 @@ func NewProxyService(h host.Host, proxyAddr ma.Multiaddr, dest peer.ID) *ProxySe
 	}
 
 	return &ProxyService{
-		host:      h,
-		dest:      dest,
-		proxyAddr: proxyAddr,
+		host: h,
+		dest: dest,
 	}
 }
 
-func (p *ProxyService) ServeAuto() {
-	_, serveArgs, _ := manet.DialArgs(p.proxyAddr)
-	fmt.Println("proxy listening on ", serveArgs)
-	ln, err := net.Listen("tcp", serveArgs)
+func (p *ProxyService) ServeAuto(port int) {
+	fmt.Println("proxy listening on ", port)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -183,19 +179,15 @@ func main() {
 		host := makeRandomHost(*p2pport + 1)
 		// Make sure our host knows how to reach destPeer
 		destPeerID := addAddrToPeerstore(host, *destPeer)
-		proxyAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", *port))
-		if err != nil {
-			log.Fatalln(err)
-		}
 		// Create the proxy service and start the http server
-		proxy := NewProxyService(host, proxyAddr, destPeerID)
-		proxy.ServeAuto() // hangs forever
+		proxy := NewProxyService(host, destPeerID)
+		proxy.ServeAuto(*port) // hangs forever
 	} else {
 		host := makeRandomHost(*p2pport)
 		// In this case we only need to make sure our host
 		// knows how to handle incoming proxied requests from
 		// another peer.
-		_ = NewProxyService(host, nil, "")
+		_ = NewProxyService(host, "")
 		select {} // hang forever
 	}
 
