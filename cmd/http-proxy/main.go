@@ -35,16 +35,21 @@ const Auto = "/proxy-auto/0.0.1"
 // This step is described in depth in other tutorials.
 func makeRandomHost(port int) host.Host {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-	addr := fmt.Sprintf(RELAY+"/ws%d", port)
-	log.Println("ListenAddr", addr)
+	relay := fmt.Sprintf(RELAY+"/ws%d", port)
+	log.Println("ListenAddr", relay)
 	host, err := libp2p.New(
 		libp2p.Transport(wsport.New),
 		// libp2p.ListenAddrStrings(addr),
-		wsport.ListenAddrStrings(addr),
+		wsport.ListenAddrStrings(relay),
 	)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	relayMA, err := wsport.FromString(relay)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	Notify(host, relayMA)
 	return host
 }
 
