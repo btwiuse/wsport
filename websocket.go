@@ -14,9 +14,6 @@ import (
 	manet "github.com/multiformats/go-multiaddr/net"
 )
 
-// WsFmt is multiaddr formatter for WsProtocol
-var WsFmt = mafmt.And(mafmt.TCP, mafmt.Base(ma.P_WS))
-
 var dialMatcher = mafmt.And(
 	mafmt.Or(mafmt.IP, mafmt.DNS),
 	mafmt.Base(ma.P_TCP),
