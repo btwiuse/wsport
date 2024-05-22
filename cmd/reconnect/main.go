@@ -37,8 +37,8 @@ func Run(args []string) error {
 		return err
 	}
 
-	notifiee := &Notifiee{
-		onListen: func(n network.Network, a ma.Multiaddr) {
+	notifiee := &network.NotifyBundle{
+		ListenF: func(n network.Network, a ma.Multiaddr) {
 			slog.Info(
 				"[Listen]",
 				"ma", fmt.Sprintf("%s/p2p/%s", a, host.ID()),
@@ -48,7 +48,7 @@ func Run(args []string) error {
 				log.Println("localAddr", i, addr)
 			}
 		},
-		onListenClose: func(n network.Network, a ma.Multiaddr) {
+		ListenCloseF: func(n network.Network, a ma.Multiaddr) {
 			slog.Info(
 				"[ListenClose]",
 				"ma", fmt.Sprintf("%s/p2p/%s", a, host.ID()),
@@ -66,7 +66,7 @@ func Run(args []string) error {
 				time.Sleep(time.Duration(i) * time.Second)
 			}
 		},
-		onConnected: func(n network.Network, c network.Conn) {
+		ConnectedF: func(n network.Network, c network.Conn) {
 			slog.Info(
 				"[Connected]",
 				"connId", c.ID(),
@@ -82,7 +82,7 @@ func Run(args []string) error {
 				log.Println("peer", i, addr, n.Connectedness(addr).String())
 			}
 		},
-		onDisconnected: func(n network.Network, c network.Conn) {
+		DisconnectedF: func(n network.Network, c network.Conn) {
 			slog.Info(
 				"[Disconnected]",
 				"connId", c.ID(),
