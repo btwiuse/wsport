@@ -124,7 +124,7 @@ func (l *listener) serve() {
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := wsconn.Wrconn(w, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
