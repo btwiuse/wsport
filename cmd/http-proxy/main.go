@@ -1,12 +1,9 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"os"
 
 	// We need to import libp2p's libraries that we use in this project.
@@ -28,8 +25,6 @@ func getEnv(key, def string) string {
 
 var RELAY = getEnv("RELAY", "https://example.com")
 
-const Auto = "/proxy-auto/0.0.1"
-
 // makeRandomHost creates a libp2p host with a randomly generated identity.
 // This step is described in depth in other tutorials.
 func makeRandomHost(port int) host.Host {
@@ -50,70 +45,6 @@ func makeRandomHost(port int) host.Host {
 	}
 	Notify(host, relayMA)
 	return host
-}
-
-// ProxyService provides HTTP proxying on top of libp2p by launching an
-// HTTP server which tunnels the requests to a destination peer running
-// ProxyService too.
-type ProxyService struct {
-	host host.Host
-	dest peer.ID
-}
-
-// NewProxyService attaches a proxy service to the given libp2p Host.
-// The proxyAddr parameter specifies the address on which the
-// HTTP proxy server listens. The dest parameter specifies the peer
-// ID of the remote peer in charge of performing the HTTP requests.
-//
-// ProxyAddr/dest may be nil/"" it is not necessary that this host
-// provides a listening HTTP server (and instead its only function is to
-// perform the proxied http requests it receives from a different peer.
-//
-// The addresses for the dest peer should be part of the host's peerstore.
-func NewProxyService(h host.Host, dest peer.ID) *ProxyService {
-	// We let our host know that it needs to handle streams tagged with the
-	// protocol id that we have defined, and then handle them to
-	// our own streamHandling function.
-	h.SetStreamHandler(Auto, AutoHandler)
-
-	fmt.Println("Proxy server is ready")
-	fmt.Println("libp2p-peer addresses:")
-	for _, a := range h.Addrs() {
-		fmt.Printf("%s/p2p/%s\n", a, h.ID())
-	}
-
-	return &ProxyService{
-		host: h,
-		dest: dest,
-	}
-}
-
-func (p *ProxyService) ServeAuto(port int) {
-	fmt.Println("proxy listening on ", port)
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalln(err)
-	}
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		go p.ServeConn(conn)
-	}
-}
-
-func (p *ProxyService) ServeConn(conn net.Conn) {
-	defer conn.Close()
-	stream, err := p.host.NewStream(context.Background(), p.dest, Auto)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer stream.Close()
-	go io.Copy(stream, conn)
-	io.Copy(conn, stream)
 }
 
 // addAddrToPeerstore parses a peer multiaddress and adds
@@ -172,23 +103,22 @@ func main() {
 	p2pport := flag.Int("l", 12000, "libp2p listen port")
 	flag.Parse()
 
-	// If we have a destination peer we will start a local server
+	// If we have a destination peer we will start a local client
 	if *destPeer != "" {
 		// We use p2pport+1 in order to not collide if the user
 		// is running the remote peer locally on that port
 		host := makeRandomHost(*p2pport + 1)
 		// Make sure our host knows how to reach destPeer
 		destPeerID := addAddrToPeerstore(host, *destPeer)
-		// Create the proxy service and start the http server
-		proxy := NewProxyService(host, destPeerID)
-		proxy.ServeAuto(*port) // hangs forever
+		// Create the proxy client and start the http server
+		client := NewProxyClient(host, destPeerID)
+		client.ServeAuto(*port) // hangs forever
 	} else {
 		host := makeRandomHost(*p2pport)
 		// In this case we only need to make sure our host
 		// knows how to handle incoming proxied requests from
 		// another peer.
-		_ = NewProxyService(host, "")
+		_ = NewProxyServer(host)
 		select {} // hang forever
 	}
-
 }
