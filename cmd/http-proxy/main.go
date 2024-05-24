@@ -50,32 +50,17 @@ func makeRandomHost(port int) host.Host {
 // addAddrToPeerstore parses a peer multiaddress and adds
 // it to the given host's peerstore, so it knows how to
 // contact it. It returns the peer ID of the remote peer.
-func addAddrToPeerstore(h host.Host, addr string) peer.ID {
-	// The following code extracts target's the peer ID from the
-	// given multiaddress
-	ipfsaddr, err := ma.NewMultiaddr(addr)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	pid, err := ipfsaddr.ValueForProtocol(ma.P_P2P)
+func addAddrToPeerstore(h host.Host, addr ma.Multiaddr) peer.ID {
+	addrinfo, err := AddrInfo(addr)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	peerid, err := peer.Decode(pid)
-	if err != nil {
-		log.Fatalln(err)
+	for _, addr := range addrinfo.Addrs {
+		h.Peerstore().AddAddr(addrinfo.ID, addr, peerstore.PermanentAddrTTL)
 	}
 
-	// Decapsulate the /ipfs/<peerID> part from the target
-	// /ip4/<a.b.c.d>/ipfs/<peer> becomes /ip4/<a.b.c.d>
-	targetPeerAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/p2p/%s", peerid))
-	targetAddr := ipfsaddr.Decapsulate(targetPeerAddr)
-
-	// We have a peer ID and a targetAddr, so we add
-	// it to the peerstore so LibP2P knows how to contact it
-	h.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
-	return peerid
+	return addrinfo.ID
 }
 
 const help = `
@@ -108,8 +93,12 @@ func main() {
 		// We use p2pport+1 in order to not collide if the user
 		// is running the remote peer locally on that port
 		host := makeRandomHost(*p2pport + 1)
+		destPeerMA, err := ma.NewMultiaddr(*destPeer)
+		if err != nil {
+			log.Fatalln(err)
+		}
 		// Make sure our host knows how to reach destPeer
-		destPeerID := addAddrToPeerstore(host, *destPeer)
+		destPeerID := addAddrToPeerstore(host, destPeerMA)
 		// Create the proxy client and start the http server
 		client := NewProxyClient(host, destPeerID)
 		client.ServeAuto(*port) // hangs forever
