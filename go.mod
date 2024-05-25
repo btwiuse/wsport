@@ -1,11 +1,11 @@
 module github.com/btwiuse/wsport
 
-go 1.22.2
+go 1.22.3
 
 require (
 	github.com/btwiuse/wsconn v0.0.2
-	github.com/btwiuse/x-parity-wss v0.0.2
-	github.com/libp2p/go-libp2p v0.34.0
+	github.com/btwiuse/x-parity-wss v0.0.3
+	github.com/libp2p/go-libp2p v0.35.0
 	github.com/multiformats/go-multiaddr v0.12.4
 	github.com/multiformats/go-multiaddr-fmt v0.1.0
 	github.com/stretchr/testify v1.9.0
