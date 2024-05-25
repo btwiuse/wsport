@@ -9,11 +9,16 @@ import (
 
 	// We need to import libp2p's libraries that we use in this project.
 
+	"github.com/btwiuse/gost"
+	gostream "github.com/libp2p/go-libp2p-gostream"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-const Auto = "/proxy-auto/0.0.1"
+var AutoHandler = gost.AutoHandler()
+
+var AutoProtocol protocol.ID = "/proxy-auto/0.0.1"
 
 // ProxyService provides HTTP proxying on top of libp2p by launching an
 // HTTP server which tunnels the requests to a destination peer running
@@ -24,6 +29,7 @@ type ProxyServer struct {
 
 type ProxyClient struct {
 	host.Host
+	port int
 	dest peer.ID
 }
 
@@ -38,11 +44,6 @@ type ProxyClient struct {
 //
 // The addresses for the dest peer should be part of the host's peerstore.
 func NewProxyServer(h host.Host) *ProxyServer {
-	// We let our host know that it needs to handle streams tagged with the
-	// protocol id that we have defined, and then handle them to
-	// our own streamHandling function.
-	h.SetStreamHandler(Auto, AutoHandler)
-
 	fmt.Println("Proxy server is ready")
 	fmt.Println("libp2p-peer addresses:")
 	for _, a := range h.Addrs() {
@@ -54,7 +55,35 @@ func NewProxyServer(h host.Host) *ProxyServer {
 	}
 }
 
-func NewProxyClient(h host.Host, dest peer.ID) *ProxyClient {
+func (p *ProxyServer) Listen() (net.Listener, error) {
+	log.Println("proxy server listening on", AutoProtocol)
+	return gostream.Listen(p.Host, AutoProtocol)
+}
+
+func (p *ProxyServer) ListenAndServe() error {
+	ln, err := p.Listen()
+	if err != nil {
+		return err
+	}
+	defer ln.Close()
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		go p.Handle(conn)
+	}
+}
+
+func (p *ProxyServer) Handle(conn net.Conn) {
+	defer conn.Close()
+	log.Println("Got a new conn!")
+	AutoHandler.Handle(conn)
+	log.Println("conn handled!")
+}
+
+func NewProxyClient(h host.Host, port int, dest peer.ID) *ProxyClient {
 	fmt.Println("Proxy client is ready")
 	fmt.Println("libp2p-peer addresses:")
 	for _, a := range h.Addrs() {
@@ -63,15 +92,20 @@ func NewProxyClient(h host.Host, dest peer.ID) *ProxyClient {
 
 	return &ProxyClient{
 		Host: h,
+		port: port,
 		dest: dest,
 	}
 }
 
-func (p *ProxyClient) ServeAuto(port int) {
-	fmt.Println("proxy listening on ", port)
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+func (p *ProxyClient) Listen() (net.Listener, error) {
+	log.Println("proxy client listening on", p.port)
+	return net.Listen("tcp", fmt.Sprintf(":%d", p.port))
+}
+
+func (p *ProxyClient) ListenAndServe() error {
+	ln, err := p.Listen()
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 	for {
 		conn, err := ln.Accept()
@@ -79,13 +113,14 @@ func (p *ProxyClient) ServeAuto(port int) {
 			log.Println(err)
 			continue
 		}
-		go p.ServeConn(conn)
+		go p.Handle(conn)
 	}
+	return nil
 }
 
-func (p *ProxyClient) ServeConn(conn net.Conn) {
+func (p *ProxyClient) Handle(conn net.Conn) {
 	defer conn.Close()
-	stream, err := p.NewStream(context.Background(), p.dest, Auto)
+	stream, err := p.NewStream(context.Background(), p.dest, AutoProtocol)
 	if err != nil {
 		log.Println(err)
 		return

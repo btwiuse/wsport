@@ -76,38 +76,65 @@ Then you can do something like: curl -x "localhost:9900" "http://ipfs.io".
 This proxies sends the request through the local peer, which proxies it to
 the remote peer, which makes it and sends the response back.`
 
-func main() {
-	flag.Usage = func() {
-		fmt.Println(help)
-		flag.PrintDefaults()
+type App struct {
+	destPeer *string
+	port     *int
+	p2pport  *int
+}
+
+func (a *App) IsClient() bool {
+	return *a.destPeer != ""
+}
+
+func (a *App) ProxyClient() *ProxyClient {
+	host := makeRandomHost(*a.p2pport + 1)
+	destPeerMA, err := ma.NewMultiaddr(*a.destPeer)
+	if err != nil {
+		log.Fatalln(err)
 	}
+	destPeerID := addAddrToPeerstore(host, destPeerMA)
+	return NewProxyClient(host, *a.port, destPeerID)
+}
 
-	// Parse some flags
-	destPeer := flag.String("d", "", "destination peer address")
-	port := flag.Int("p", 9900, "proxy port")
-	p2pport := flag.Int("l", 12000, "libp2p listen port")
-	flag.Parse()
+func (a *App) ProxyServer() *ProxyServer {
+	host := makeRandomHost(*a.p2pport)
+	return NewProxyServer(host)
+}
 
-	// If we have a destination peer we will start a local client
-	if *destPeer != "" {
-		// We use p2pport+1 in order to not collide if the user
-		// is running the remote peer locally on that port
-		host := makeRandomHost(*p2pport + 1)
-		destPeerMA, err := ma.NewMultiaddr(*destPeer)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		// Make sure our host knows how to reach destPeer
-		destPeerID := addAddrToPeerstore(host, destPeerMA)
-		// Create the proxy client and start the http server
-		client := NewProxyClient(host, destPeerID)
-		client.ServeAuto(*port) // hangs forever
-	} else {
-		host := makeRandomHost(*p2pport)
-		// In this case we only need to make sure our host
-		// knows how to handle incoming proxied requests from
-		// another peer.
-		_ = NewProxyServer(host)
-		select {} // hang forever
+func Parse(args []string) (*App, error) {
+	flagSet := flag.NewFlagSet("proxy", flag.ContinueOnError)
+	flagSet.Usage = func() {
+		fmt.Println(help)
+		flagSet.PrintDefaults()
+	}
+	app := &App{
+		destPeer: flagSet.String("d", "", "destination peer address"),
+		port:     flagSet.Int("p", 9900, "proxy port"),
+		p2pport:  flagSet.Int("l", 12000, "libp2p listen port"),
+	}
+	if err := flagSet.Parse(args); err != nil {
+		return nil, err
+	}
+	return app, nil
+}
+
+func (app *App) Run() error {
+	if app.IsClient() {
+		return app.ProxyClient().ListenAndServe()
+	}
+	return app.ProxyServer().ListenAndServe()
+}
+
+func Run(args []string) error {
+	app, err := Parse(args)
+	if err != nil {
+		return err
+	}
+	return app.Run()
+}
+
+func main() {
+	if err := Run(os.Args[1:]); err != nil {
+		log.Fatalln(err)
 	}
 }

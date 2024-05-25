@@ -1,15 +1,15 @@
 module github.com/btwiuse/wsport/cmd
 
-go 1.22.2
+go 1.22.3
 
-replace github.com/btwiuse/wsport v0.0.0 => ..
+replace github.com/btwiuse/wsport v0.0.4 => ..
 
 require (
 	github.com/btwiuse/gost v0.0.4
-	github.com/btwiuse/wsport v0.0.0
-	github.com/btwiuse/x-parity-wss v0.0.2
+	github.com/btwiuse/wsport v0.0.4
 	github.com/ipfs/go-datastore v0.6.0
-	github.com/libp2p/go-libp2p v0.34.0
+	github.com/libp2p/go-libp2p v0.35.0
+	github.com/libp2p/go-libp2p-gostream v0.6.0
 	github.com/libp2p/go-libp2p-kad-dht v0.25.2
 	github.com/multiformats/go-multiaddr v0.12.4
 	github.com/watjurk/ezlibp2p v0.0.0-20240330232927-17c7ded27593
@@ -24,6 +24,7 @@ require (
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btwiuse/wsconn v0.0.2 // indirect
+	github.com/btwiuse/x-parity-wss v0.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
