@@ -10,6 +10,7 @@ require (
 	github.com/ipfs/go-datastore v0.6.0
 	github.com/libp2p/go-libp2p v0.35.0
 	github.com/libp2p/go-libp2p-gostream v0.6.0
+	github.com/libp2p/go-libp2p-http v0.5.0
 	github.com/libp2p/go-libp2p-kad-dht v0.25.2
 	github.com/multiformats/go-multiaddr v0.12.4
 	github.com/watjurk/ezlibp2p v0.0.0-20240330232927-17c7ded27593
