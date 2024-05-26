@@ -31,7 +31,7 @@ var RELAY = getEnv("RELAY", "https://example.com")
 // This step is described in depth in other tutorials.
 func makeRandomHost(port int) host.Host {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-	addr := fmt.Sprintf(RELAY+"/ws%d", port)
+	addr := RELAY
 	log.Println("ListenAddr", addr)
 	host, err := libp2p.New(
 		libp2p.Transport(wsport.New),
@@ -66,21 +66,23 @@ func main() {
 		fmt.Printf("%s/p2p/%s\n", a, host.ID())
 	}
 
-	maddr, err := ma.NewMultiaddr(os.Args[1])
-	if err != nil {
-		log.Fatalln(err)
-	}
+	for _, arg := range os.Args[1:] {
+		maddr, err := ma.NewMultiaddr(arg)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-	addrInfo, err := AddrInfo(maddr)
-	if err != nil {
-		log.Fatalln(err)
-	}
+		addrInfo, err := AddrInfo(maddr)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-	err = host.Connect(context.Background(), *addrInfo)
-	if err != nil {
-		log.Fatalln(err)
-	} else {
-		fmt.Println("Connected to", addrInfo)
+		err = host.Connect(context.Background(), *addrInfo)
+		if err != nil {
+			log.Fatalln(err)
+		} else {
+			fmt.Println("Connected to", addrInfo)
+		}
 	}
 
 	select {}
