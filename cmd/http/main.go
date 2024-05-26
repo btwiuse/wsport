@@ -8,10 +8,10 @@ import (
 
 	// We need to import libp2p's libraries that we use in this project.
 	"github.com/libp2p/go-libp2p"
-	gostream "github.com/libp2p/go-libp2p-gostream"
-	p2phttp "github.com/libp2p/go-libp2p-http"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/protocol"
+	p2phttp "github.com/libp2p/go-libp2p/p2p/http"
+	"github.com/libp2p/go-libp2p/p2p/net/gostream"
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/btwiuse/wsport"
@@ -41,7 +41,7 @@ func Run(args []string) error {
 
 	Notify(host, relay)
 
-	go ListenAndServe(host, p2phttp.DefaultP2PProtocol, http.FileServer(http.Dir(".")))
+	go ListenAndServe(host, p2phttp.ProtocolIDForMultistreamSelect, http.FileServer(http.Dir(".")))
 
 	err = host.Network().Listen(relay)
 	if err != nil {
