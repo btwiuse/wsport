@@ -5,11 +5,11 @@ go 1.22.3
 require (
 	github.com/btwiuse/wsconn v0.0.2
 	github.com/btwiuse/x-parity-wss v0.0.3
-	github.com/libp2p/go-libp2p v0.35.0
+	github.com/libp2p/go-libp2p v0.35.1
 	github.com/multiformats/go-multiaddr v0.12.4
 	github.com/multiformats/go-multiaddr-fmt v0.1.0
 	github.com/stretchr/testify v1.9.0
-	github.com/webteleport/webteleport v0.5.31
+	github.com/webteleport/webteleport v0.5.32
 	nhooyr.io/websocket v1.8.11
 )
 
@@ -73,7 +73,7 @@ require (
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pion/datachannel v1.5.6 // indirect
 	github.com/pion/dtls/v2 v2.2.11 // indirect
-	github.com/pion/ice/v2 v2.3.24 // indirect
+	github.com/pion/ice/v2 v2.3.25 // indirect
 	github.com/pion/interceptor v0.1.29 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/mdns v0.0.12 // indirect
@@ -94,7 +94,7 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
-	github.com/quic-go/quic-go v0.44.0 // indirect
+	github.com/quic-go/quic-go v0.45.0 // indirect
 	github.com/quic-go/webtransport-go v0.8.0 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/rs/cors v1.10.1 // indirect

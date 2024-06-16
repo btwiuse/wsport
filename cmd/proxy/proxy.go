@@ -10,10 +10,10 @@ import (
 	// We need to import libp2p's libraries that we use in this project.
 
 	"github.com/btwiuse/gost"
-	gostream "github.com/libp2p/go-libp2p-gostream"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/p2p/net/gostream"
 )
 
 var AutoHandler = gost.AutoHandler()
