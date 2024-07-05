@@ -97,7 +97,7 @@ require (
 	github.com/quic-go/quic-go v0.45.0 // indirect
 	github.com/quic-go/webtransport-go v0.8.0 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
-	github.com/rs/cors v1.10.1 // indirect
+	github.com/rs/cors v1.11.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/webteleport/utils v0.2.14 // indirect
 	go.uber.org/dig v1.17.1 // indirect
