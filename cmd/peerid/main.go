@@ -14,7 +14,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/routing"
 
 	"github.com/btwiuse/wsport"
-	"github.com/watjurk/ezlibp2p"
+	"github.com/btwiuse/p2pid"
 )
 
 func getEnv(key, def string) string {
@@ -33,7 +33,7 @@ func makeRandomHost(port int) host.Host {
 	addr := fmt.Sprintf(RELAY+"/ws%d", port)
 	slog.Info("Listen", "addr", addr)
 
-	identity, err := ezlibp2p.PersistentIdentity()
+	identity, err := p2pid.PersistentIdentity()
 	if err != nil {
 		log.Fatalln(err)
 	}

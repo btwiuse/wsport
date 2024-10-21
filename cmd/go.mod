@@ -6,12 +6,12 @@ replace github.com/btwiuse/wsport v0.0.6 => ..
 
 require (
 	github.com/btwiuse/gost v0.0.4
+	github.com/btwiuse/p2pid v0.0.0
 	github.com/btwiuse/wsport v0.0.6
 	github.com/ipfs/go-datastore v0.6.0
 	github.com/libp2p/go-libp2p v0.36.5
 	github.com/libp2p/go-libp2p-kad-dht v0.27.0
 	github.com/multiformats/go-multiaddr v0.13.0
-	github.com/watjurk/ezlibp2p v0.0.0-20240330232927-17c7ded27593
 )
 
 require (
@@ -82,7 +82,6 @@ require (
 	github.com/libp2p/go-netroute v0.2.1 // indirect
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
 	github.com/libp2p/go-yamux/v4 v4.0.1 // indirect
-	github.com/libp2p/zeroconf/v2 v2.2.0 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/miekg/dns v1.1.62 // indirect

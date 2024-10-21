@@ -21,7 +21,7 @@ import (
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
 
 	"github.com/btwiuse/wsport"
-	"github.com/watjurk/ezlibp2p"
+	"github.com/btwiuse/p2pid"
 )
 
 func getEnv(key, def string) string {
@@ -41,7 +41,7 @@ func Run(args []string) error {
 	}
 
 	if len(args) == 0 {
-		identity, err := ezlibp2p.PersistentIdentity()
+		identity, err := p2pid.PersistentIdentity()
 		if err != nil {
 			return err
 		}
