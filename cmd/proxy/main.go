@@ -93,12 +93,12 @@ func (a *App) Run() error {
 	relay := cmd.RELAY
 
 	if a.IsClient() {
-		log.Println("client relay addr:", relay)
+		fmt.Println("client relay addr:", relay)
 
 		return a.ProxyClient(relay).ListenAndServe()
 	}
 
-	log.Println("server relay addr:", relay)
+	fmt.Println("server relay addr:", relay)
 
 	return a.ProxyServer(relay).ListenAndServe()
 }

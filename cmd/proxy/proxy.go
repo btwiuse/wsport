@@ -44,10 +44,9 @@ type ProxyClient struct {
 //
 // The addresses for the dest peer should be part of the host's peerstore.
 func NewProxyServer(h host.Host) *ProxyServer {
-	fmt.Println("Proxy server is ready")
-	fmt.Println("libp2p-peer addresses:")
+	fmt.Println("listening addresses:")
 	for _, a := range h.Addrs() {
-		fmt.Printf("%s/p2p/%s\n", a, h.ID())
+		fmt.Printf("- %s/p2p/%s\n", a, h.ID())
 	}
 
 	return &ProxyServer{
@@ -84,10 +83,9 @@ func (p *ProxyServer) Handle(conn net.Conn) {
 }
 
 func NewProxyClient(h host.Host, port int, dest peer.ID) *ProxyClient {
-	fmt.Println("Proxy client is ready")
-	fmt.Println("libp2p-peer addresses:")
+	fmt.Println("listening addresses:")
 	for _, a := range h.Addrs() {
-		fmt.Printf("%s/p2p/%s\n", a, h.ID())
+		fmt.Printf("- %s/p2p/%s\n", a, h.ID())
 	}
 
 	return &ProxyClient{
