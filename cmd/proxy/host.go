@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -17,6 +18,8 @@ func newHost(relay string) (host.Host, error) {
 	}
 
 	host, err := libp2p.New(
+		libp2p.ProtocolVersion(os.Getenv("PROTOCOL_VERSION")),
+		libp2p.UserAgent(os.Getenv("USER_AGENT")),
 		identity,
 		libp2p.Transport(wsport.New),
 		wsport.ListenAddrStrings(relay),

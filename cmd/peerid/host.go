@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -19,6 +20,8 @@ func newHost(addr string) (host.Host, error) {
 	}
 
 	return libp2p.New(
+		libp2p.ProtocolVersion(os.Getenv("PROTOCOL_VERSION")),
+		libp2p.UserAgent(os.Getenv("USER_AGENT")),
 		identity,
 		libp2p.Transport(wsport.New),
 		wsport.ListenAddrStrings(addr),

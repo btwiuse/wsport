@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
 
 	// "github.com/libp2p/go-libp2p/core/routing"
@@ -28,18 +30,19 @@ import (
 func Run(args []string) error {
 	relayURL := cmd.RELAY
 
+	identity, err := p2pid.PersistentIdentity()
+	if err != nil {
+		return err
+	}
+
 	options := []libp2p.Option{
+		libp2p.ProtocolVersion(os.Getenv("PROTOCOL_VERSION")),
+		libp2p.UserAgent(os.Getenv("USER_AGENT")),
 		libp2p.Transport(wsport.New),
+		identity,
 	}
 
 	if len(args) == 0 {
-		identity, err := p2pid.PersistentIdentity()
-		if err != nil {
-			return err
-		}
-
-		options = append(options, identity)
-
 		/*
 			router := libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
 				return dht.New(context.Background(), h)
@@ -48,7 +51,12 @@ func Run(args []string) error {
 
 		// options = append(options, router)
 
-		relayURL += "/bootstrap"
+		path := "/bootstrap"
+		if domain := os.Getenv("DOMAIN"); domain != "" {
+			path = domain
+		}
+
+		relayURL += path
 	}
 
 	relay, err := wsport.FromString(relayURL)
@@ -70,12 +78,21 @@ func Run(args []string) error {
 		// Construct a datastore (needed by the DHT). This is just a simple, in-memory thread-safe datastore.
 		dstore := dsync.MutexWrap(ds.NewMapDatastore())
 
+		customOptions := []dht.Option{
+			dht.Datastore(dstore),
+			dht.Mode(dht.ModeServer),
+		}
+
+		dhtOverride := os.Getenv("DHT")
+		if dhtOverride != "" {
+			customOptions = append(customOptions, dht.V1ProtocolOverride(protocol.ID(dhtOverride)))
+		}
+
 		// Make the DHT
 		ipfsdht, err = dht.New(
 			context.Background(),
 			host,
-			dht.Datastore(dstore),
-			dht.Mode(dht.ModeServer),
+			customOptions...,
 		)
 		if err != nil {
 			return err
@@ -85,6 +102,8 @@ func Run(args []string) error {
 	}
 
 	Notify(host, relay)
+
+	MatchUnknownProtocol(host)
 
 	err = host.Network().Listen(relay)
 	if err != nil {
@@ -124,6 +143,20 @@ func Run(args []string) error {
 	}()
 
 	return nil
+}
+
+func MatchUnknownProtocol(h host.Host) {
+	matcherFunc := func(p protocol.ID) bool {
+		fmt.Printf("Catch-all matcher called for protocol: %s\n", p)
+		return true
+	}
+
+	handlerFunc := func(s network.Stream) {
+		s.Reset()
+	}
+
+	h.SetStreamHandlerMatch("/", matcherFunc, handlerFunc)
+
 }
 
 func KeepBootnode(host host.Host, addrs []string) {
