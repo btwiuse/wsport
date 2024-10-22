@@ -20,18 +20,9 @@ import (
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	rhost "github.com/libp2p/go-libp2p/p2p/host/routed"
 
-	"github.com/btwiuse/wsport"
 	"github.com/btwiuse/p2pid"
+	"github.com/btwiuse/wsport"
 )
-
-func getEnv(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
-
-var RELAY = getEnv("RELAY", "https://example.com")
 
 func Run(args []string) error {
 	relayURL := RELAY

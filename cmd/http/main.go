@@ -2,52 +2,45 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	// We need to import libp2p's libraries that we use in this project.
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/protocol"
 	p2phttp "github.com/libp2p/go-libp2p/p2p/http"
-	"github.com/libp2p/go-libp2p/p2p/net/gostream"
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/btwiuse/wsport"
 )
 
-func getEnv(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
-
-var RELAY = getEnv("RELAY", "https://example.com")
-
 func Run(args []string) error {
-	relay, err := wsport.FromString(RELAY)
+	host, err := newHost()
 	if err != nil {
 		return err
 	}
 
-	host, err := libp2p.New(
-		libp2p.Transport(wsport.New),
-	)
+	fmt.Println("relay addr:", RELAY)
+
+	relayMa, err := wsport.FromString(RELAY)
 	if err != nil {
 		return err
 	}
 
-	Notify(host, relay)
+	Notify(host, relayMa)
 
 	go ListenAndServe(host, p2phttp.ProtocolIDForMultistreamSelect, http.FileServer(http.Dir(".")))
 
-	err = host.Network().Listen(relay)
+	err = host.Network().Listen(relayMa)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("registered protocols:")
+	for _, protocol := range host.Mux().Protocols() {
+		fmt.Println("-", protocol)
+	}
+
+	// Connect to the specified peers
 	for _, addr := range args {
 		maddr, err := ma.NewMultiaddr(addr)
 		if err != nil {
@@ -64,15 +57,6 @@ func Run(args []string) error {
 	}
 
 	return nil
-}
-
-func ListenAndServe(host host.Host, p protocol.ID, handler http.Handler) error {
-	ln, err := gostream.Listen(host, p)
-	if err != nil {
-		return err
-	}
-
-	return http.Serve(ln, handler)
 }
 
 func main() {

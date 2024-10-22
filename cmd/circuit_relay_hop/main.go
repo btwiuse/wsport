@@ -2,14 +2,23 @@ package main
 
 import (
 	"fmt"
-	// We need to import libp2p's libraries that we use in this project.
+
+	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 )
 
 func main() {
-	addr := RELAY + "/ws1000"
+	addr := RELAY + "/ws6789"
 	fmt.Println("relay addr:", addr)
 
 	host, err := newHost(addr)
+	if err != nil {
+		panic(err)
+	}
+
+	// register new protocol libp2p circuitv2 relay
+	// /libp2p/circuit/relay/0.2.0/hop
+	// returns *relay.Relay
+	_, err = relay.New(host)
 	if err != nil {
 		panic(err)
 	}

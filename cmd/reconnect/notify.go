@@ -6,15 +6,12 @@ import (
 	"log/slog"
 	"time"
 
-	// We need to import libp2p's libraries that we use in this project.
-
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	ma "github.com/multiformats/go-multiaddr"
-	// "github.com/libp2p/go-libp2p/core/routing"
 )
 
-func Notify(host host.Host, relay ma.Multiaddr) {
+func Notify(host host.Host, relayMa ma.Multiaddr) {
 	notifiee := &network.NotifyBundle{
 		ListenF: func(n network.Network, a ma.Multiaddr) {
 			slog.Info(
@@ -36,7 +33,7 @@ func Notify(host host.Host, relay ma.Multiaddr) {
 				log.Println("localAddr", i, addr)
 			}
 			for i := 0; ; i++ {
-				err := n.Listen(relay)
+				err := n.Listen(relayMa)
 				if err == nil {
 					break
 				}

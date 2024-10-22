@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/libp2p/go-libp2p"
 	"github.com/btwiuse/p2pid"
+	"github.com/libp2p/go-libp2p"
 )
 
 func main() {

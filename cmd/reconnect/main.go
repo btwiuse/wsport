@@ -1,43 +1,57 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 
-	// We need to import libp2p's libraries that we use in this project.
-	"github.com/libp2p/go-libp2p"
+	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/btwiuse/wsport"
 )
 
-func getEnv(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
-
-var RELAY = getEnv("RELAY", "https://example.com")
-
 func Run(args []string) error {
-	relay, err := wsport.FromString(RELAY)
+	host, err := newHost()
 	if err != nil {
 		return err
 	}
 
-	host, err := libp2p.New(
-		libp2p.Transport(wsport.New),
-	)
+	fmt.Println("relay addr:", RELAY)
+
+	relayMa, err := wsport.FromString(RELAY)
 	if err != nil {
 		return err
 	}
 
-	Notify(host, relay)
+	Notify(host, relayMa)
 
-	err = host.Network().Listen(relay)
+	err = host.Network().Listen(relayMa)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("registered protocols:")
+	for _, protocol := range host.Mux().Protocols() {
+		fmt.Println("-", protocol)
+	}
+
+	// Connect to the specified peers
+	for _, addr := range args {
+		maddr, err := ma.NewMultiaddr(addr)
+		if err != nil {
+			return err
+		}
+		peerInfo, err := AddrInfo(maddr)
+		if err != nil {
+			return err
+		}
+		err = host.Connect(context.Background(), *peerInfo)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
