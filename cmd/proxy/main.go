@@ -10,6 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 
+	"github.com/btwiuse/wsport/cmd"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -45,17 +46,13 @@ the remote peer, which makes it and sends the response back.`
 type App struct {
 	destPeer *string
 	port     *int
-	p2pport  *int
 }
 
 func (a *App) IsClient() bool {
 	return *a.destPeer != ""
 }
 
-func (a *App) ProxyClient() *ProxyClient {
-	relay := RELAY + "/ws" + fmt.Sprintf("%d", *a.p2pport+1)
-	log.Println("client relay addr:", relay)
-
+func (a *App) ProxyClient(relay string) *ProxyClient {
 	host, err := newHost(relay)
 	if err != nil {
 		log.Fatalln(err)
@@ -68,10 +65,7 @@ func (a *App) ProxyClient() *ProxyClient {
 	return NewProxyClient(host, *a.port, destPeerID)
 }
 
-func (a *App) ProxyServer() *ProxyServer {
-	relay := RELAY + "/ws" + fmt.Sprintf("%d", *a.p2pport)
-	log.Println("server relay addr:", relay)
-
+func (a *App) ProxyServer(relay string) *ProxyServer {
 	host, err := newHost(relay)
 	if err != nil {
 		log.Fatalln(err)
@@ -86,9 +80,8 @@ func Parse(args []string) (*App, error) {
 		flagSet.PrintDefaults()
 	}
 	app := &App{
-		destPeer: flagSet.String("d", "", "destination peer address"),
+		destPeer: flagSet.String("d", "", "destination peer address. If empty, run as server, otherwise run as client"),
 		port:     flagSet.Int("p", 9900, "proxy port"),
-		p2pport:  flagSet.Int("l", 12000, "libp2p listen port"),
 	}
 	if err := flagSet.Parse(args); err != nil {
 		return nil, err
@@ -96,11 +89,18 @@ func Parse(args []string) (*App, error) {
 	return app, nil
 }
 
-func (app *App) Run() error {
-	if app.IsClient() {
-		return app.ProxyClient().ListenAndServe()
+func (a *App) Run() error {
+	relay := cmd.RELAY
+
+	if a.IsClient() {
+		log.Println("client relay addr:", relay)
+
+		return a.ProxyClient(relay).ListenAndServe()
 	}
-	return app.ProxyServer().ListenAndServe()
+
+	log.Println("server relay addr:", relay)
+
+	return a.ProxyServer(relay).ListenAndServe()
 }
 
 func Run(args []string) error {

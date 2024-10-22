@@ -22,10 +22,11 @@ import (
 
 	"github.com/btwiuse/p2pid"
 	"github.com/btwiuse/wsport"
+	"github.com/btwiuse/wsport/cmd"
 )
 
 func Run(args []string) error {
-	relayURL := RELAY
+	relayURL := cmd.RELAY
 
 	options := []libp2p.Option{
 		libp2p.Transport(wsport.New),

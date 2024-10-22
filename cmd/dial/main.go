@@ -6,13 +6,14 @@ import (
 	"log"
 	"os"
 
+	"github.com/btwiuse/wsport/cmd"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 
-	addr := RELAY
+	addr := cmd.RELAY
 	fmt.Println("relay addr:", addr)
 
 	host, err := newHost(addr)

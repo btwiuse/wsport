@@ -1,3 +1,15 @@
+build:
+	go build -v -o /tmp/ ./basic
+	go build -v -o /tmp/ ./bootstrap
+	go build -v -o /tmp/ ./circuit_relay_hop
+	go build -v -o /tmp/ ./dial
+	go build -v -o /tmp/ ./host
+	go build -v -o /tmp/ ./http
+	go build -v -o /tmp/ ./peerid
+	go build -v -o /tmp/ ./pid_seed
+	go build -v -o /tmp/ ./proxy
+	go build -v -o /tmp/ ./reconnect
+
 bas:
 	# Create a libp2p.Host and print the peer id
 	go run ./basic

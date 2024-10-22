@@ -9,6 +9,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/btwiuse/wsport"
+	"github.com/btwiuse/wsport/cmd"
 )
 
 func Run(args []string) error {
@@ -17,9 +18,10 @@ func Run(args []string) error {
 		return err
 	}
 
-	fmt.Println("relay addr:", RELAY)
+	addr := cmd.RELAY
+	fmt.Println("relay addr:", addr)
 
-	relayMa, err := wsport.FromString(RELAY)
+	relayMa, err := wsport.FromString(addr)
 	if err != nil {
 		return err
 	}

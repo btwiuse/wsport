@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 
+	"github.com/btwiuse/wsport/cmd"
 	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/relay"
 )
 
 func main() {
-	addr := RELAY + "/ws6789"
+	addr := cmd.RELAY
 	fmt.Println("relay addr:", addr)
 
 	host, err := newHost(addr)

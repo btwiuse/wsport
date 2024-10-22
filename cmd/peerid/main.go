@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	// We need to import libp2p's libraries that we use in this project.
+
+	"github.com/btwiuse/wsport/cmd"
 )
 
 func main() {
-	addr := RELAY + "/ws1000"
+	addr := cmd.RELAY
 	fmt.Println("relay addr:", addr)
 
 	host, err := newHost(addr)

@@ -17,6 +17,8 @@ func newHost(addr string) (host.Host, error) {
 	return libp2p.New(
 		identity,
 		libp2p.Transport(wsport.New),
+		// disable /libp2p/circuit/relay/0.2.0/stop
+		// libp2p.DisableRelay(),
 		wsport.ListenAddrStrings(addr),
 	)
 }
