@@ -11,6 +11,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/transport"
 	"github.com/webteleport/webteleport/transport/websocket"
+	"github.com/webteleport/utils"
 
 	"github.com/btwiuse/wsconn"
 	ma "github.com/multiformats/go-multiaddr"
@@ -26,7 +27,12 @@ type listener struct {
 	laddr ma.Multiaddr
 
 	closed   chan struct{}
-	incoming chan net.Conn
+	incoming chan *ConnAddr
+}
+
+type ConnAddr struct {
+	Conn net.Conn
+	Addr string
 }
 
 func (pwma *parsedWebsocketMultiaddr) toMultiaddr() ma.Multiaddr {
@@ -98,7 +104,7 @@ func newListener(a ma.Multiaddr, tlsConf *tls.Config) (*listener, error) {
 		nl:       nl,
 		isWss:    parsed.isWSS,
 		laddr:    laddr,
-		incoming: make(chan net.Conn),
+		incoming: make(chan *ConnAddr),
 		closed:   make(chan struct{}),
 	}
 	return ln, nil
@@ -122,6 +128,7 @@ func (l *listener) serve() {
 }
 
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	realIP := utils.RealIP(r)
 	c, err := wsconn.Wrconn(w, r)
 	if err != nil {
 		// http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -129,7 +136,7 @@ func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	select {
-	case l.incoming <- c:
+	case l.incoming <- &ConnAddr{c, realIP}:
 	case <-l.closed:
 		c.Close()
 	}
@@ -138,6 +145,7 @@ func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type MyConn struct {
 	net.Conn
+	Addr   string
 	Secure bool
 }
 
@@ -150,10 +158,16 @@ func (c *MyConn) LocalMultiaddr() ma.Multiaddr {
 
 // fix websocket/unknown-unknown
 func (c *MyConn) RemoteMultiaddr() ma.Multiaddr {
-	if !c.Secure {
-		return ma.StringCast("/ip4/127.0.0.1/tcp/404/ws")
+	addr := "127.0.0.1"
+	if c.Addr != "" {
+		addr = c.Addr
 	}
-	return ma.StringCast("/ip4/127.0.0.1/tcp/404/wss")
+	if !c.Secure {
+		maddr := fmt.Sprintf("/ip4/%s/tcp/404/ws", addr)
+		return ma.StringCast(maddr)
+	}
+	maddr := fmt.Sprintf("/ip4/%s/tcp/404/wss", addr)
+	return ma.StringCast(maddr)
 }
 
 func (l *listener) Accept() (manet.Conn, error) {
@@ -164,7 +178,8 @@ func (l *listener) Accept() (manet.Conn, error) {
 		}
 
 		mnc := &MyConn{
-			Conn:   c,
+			Conn:   c.Conn,
+			Addr:   c.Addr,
 			Secure: l.isWss,
 		}
 		return mnc, nil
