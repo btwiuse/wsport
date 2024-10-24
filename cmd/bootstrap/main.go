@@ -101,7 +101,7 @@ func Run(args []string) error {
 		host = rhost.Wrap(host, ipfsdht)
 	}
 
-	Notify(host, relay)
+	cmd.Notify(host, relay)
 
 	MatchUnknownProtocol(host)
 

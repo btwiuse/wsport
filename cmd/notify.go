@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/host"
@@ -51,8 +52,11 @@ func Notify(host host.Host, relayMa ma.Multiaddr) {
 				// "peers", host.Peerstore().Peers(),
 				// "connLocalPeerId", c.LocalPeer(),
 				// "connLocalMa", c.LocalMultiaddr(),
-				// "connRemoteMa", c.RemoteMultiaddr(),
+				"connRemoteMa", c.RemoteMultiaddr(),
 			)
+			UpdateUniquePeers(host)
+			log.Println("peer count", len(host.Peerstore().Peers()), "unique", CountUniquePeers())
+			return
 			for i, addr := range host.Peerstore().Peers() {
 				log.Println("peer", i, addr, n.Connectedness(addr).String())
 			}
@@ -63,12 +67,16 @@ func Notify(host host.Host, relayMa ma.Multiaddr) {
 				"connId", c.ID(),
 				"connRemotePeerId", c.RemotePeer(),
 				"direction", c.Stat().Direction.String(),
-				"opened", c.Stat().Opened,
+				"duration", time.Since(c.Stat().Opened),
+				// "opened", c.Stat().Opened,
 				// "peers", host.Peerstore().Peers(),
 				// "connLocalPeerId", c.LocalPeer(),
 				// "connLocalMa", c.LocalMultiaddr(),
 				// "connRemoteMa", c.RemoteMultiaddr(),
 			)
+			UpdateUniquePeers(host)
+			log.Println("peer count", len(host.Peerstore().Peers()), "unique", CountUniquePeers())
+			return
 			for i, addr := range host.Peerstore().Peers() {
 				log.Println("peer", i, addr, n.Connectedness(addr).String())
 			}
@@ -76,4 +84,25 @@ func Notify(host host.Host, relayMa ma.Multiaddr) {
 	}
 
 	host.Network().Notify(notifiee)
+}
+
+var UniquePeers = sync.Map{}
+
+func UpdateUniquePeers(host host.Host) {
+	for _, peer := range host.Peerstore().Peers() {
+		// key: peer.ID, value: struct{}
+		_, loaded := UniquePeers.LoadOrStore(peer, struct{}{})
+		if !loaded {
+			log.Println("new peer", peer)
+		}
+	}
+}
+
+func CountUniquePeers() int {
+	count := 0
+	UniquePeers.Range(func(_, _ interface{}) bool {
+		count++
+		return true
+	})
+	return count
 }
