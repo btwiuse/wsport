@@ -59,7 +59,7 @@ func Run(args []string) error {
 		relayURL += path
 	}
 
-	relay, err := wsport.FromString(relayURL)
+	relayMa, err := wsport.FromString(relayURL)
 	if err != nil {
 		return err
 	}
@@ -101,11 +101,11 @@ func Run(args []string) error {
 		host = rhost.Wrap(host, ipfsdht)
 	}
 
-	cmd.Notify(host, relay)
+	cmd.Notify(host, relayMa)
 
 	MatchUnknownProtocol(host)
 
-	err = host.Network().Listen(relay)
+	err = host.Network().Listen(relayMa)
 	if err != nil {
 		return err
 	}
