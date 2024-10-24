@@ -9,6 +9,7 @@ import (
 
 	"github.com/btwiuse/p2pid"
 	"github.com/btwiuse/wsport"
+	"github.com/btwiuse/wsport/cmd"
 )
 
 func newHost(relay string) (host.Host, error) {
@@ -33,7 +34,7 @@ func newHost(relay string) (host.Host, error) {
 		return nil, err
 	}
 
-	Notify(host, relayMA)
+	cmd.Notify(host, relayMA)
 
 	fmt.Println("registered protocols:")
 	for _, protocol := range host.Mux().Protocols() {

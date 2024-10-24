@@ -28,7 +28,7 @@ func Run(args []string) error {
 		return err
 	}
 
-	Notify(host, relayMa)
+	cmd.Notify(host, relayMa)
 
 	go ListenAndServe(host, p2phttp.ProtocolIDForMultistreamSelect, http.FileServer(http.Dir(".")))
 

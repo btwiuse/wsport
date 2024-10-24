@@ -26,7 +26,7 @@ func Run(args []string) error {
 		return err
 	}
 
-	Notify(host, relayMa)
+	cmd.Notify(host, relayMa)
 
 	err = host.Network().Listen(relayMa)
 	if err != nil {
