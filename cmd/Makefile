@@ -10,6 +10,10 @@ build:
 	go build -v -o /tmp/ ./proxy
 	go build -v -o /tmp/ ./reconnect
 
+patch:
+	# patch for termux
+	sudo sed -i -e 's,\tlog.Errorw,\t// log.Errorw,g' ~/go/pkg/mod/github.com/libp2p/go-libp2p\@v0.37.0/p2p/host/basic/basic_host.go
+	cat ~/go/pkg/mod/github.com/libp2p/go-libp2p\@v0.37.0/p2p/host/basic/basic_host.go | grep log.Errorw
 bas:
 	# Create a libp2p.Host and print the peer id
 	/tmp/basic
