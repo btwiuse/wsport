@@ -9,6 +9,7 @@ import (
 
 	p2phttp "github.com/libp2p/go-libp2p/p2p/http"
 	ma "github.com/multiformats/go-multiaddr"
+	term "github.com/webteleport/ufo/apps/term/handler"
 
 	"github.com/btwiuse/wsport"
 	"github.com/btwiuse/wsport/cmd"
@@ -31,6 +32,8 @@ func Run(args []string) error {
 	cmd.Notify(host, relayMa)
 
 	go ListenAndServe(host, p2phttp.ProtocolIDForMultistreamSelect, http.FileServer(http.Dir(".")))
+	go ListenAndServe(host, "/remote-dir/1.0.0", http.FileServer(http.Dir(".")))
+	go ListenAndServe(host, "/term/1.0.0", term.Handler())
 
 	err = host.Network().Listen(relayMa)
 	if err != nil {
