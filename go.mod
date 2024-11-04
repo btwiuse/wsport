@@ -4,9 +4,9 @@ go 1.23.2
 
 require (
 	github.com/btwiuse/wsconn v0.0.3
-	github.com/btwiuse/x-parity-wss v0.0.4
+	github.com/btwiuse/x-parity-wss v0.0.5
 	github.com/libp2p/go-libp2p v0.37.0
-	github.com/multiformats/go-multiaddr v0.13.0
+	github.com/multiformats/go-multiaddr v0.14.0
 	github.com/multiformats/go-multiaddr-fmt v0.1.0
 	github.com/stretchr/testify v1.9.0
 	github.com/webteleport/utils v0.2.16
