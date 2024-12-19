@@ -123,21 +123,30 @@ func url2Multiaddr(u *url.URL) (ma.Multiaddr, error) {
 }
 
 func (l *listener) serve() {
-	http.Serve(l.nl, l)
+	err := http.Serve(l.nl, l)
+	fmt.Println("http.Serve error:", err)
 	close(l.closed)
 }
 
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	realIP := utils.RealIP(r)
+	fmt.Println("realIP:", realIP)
 	c, err := wsconn.Wrconn(w, r)
 	if err != nil {
+		fmt.Println("wrconn error:", err)
 		// http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	addr := wsconn.NewAddr("tcp", fmt.Sprintf("%s:%d", realIP, 9527))
+	c = wsconn.ConnWithAddr(c, addr)
 
 	select {
+	// Add the connection to the incoming channel.
 	case l.incoming <- &ConnAddr{c, realIP}:
+		fmt.Println("incoming conn:", c.RemoteAddr())
+	// The listener has been closed, close the connection.
 	case <-l.closed:
+		fmt.Println("listener closed, close conn:", c.RemoteAddr())
 		c.Close()
 	}
 	// The connection has been hijacked, it's safe to return.
