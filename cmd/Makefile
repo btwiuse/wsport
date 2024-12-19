@@ -84,6 +84,8 @@ boo:
 	$(eval ARG1 := $(filter-out $@,$(MAKECMDGOALS)))
 	/tmp/bootstrap $(ARG1)
 
+# https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains/specs
+
 vara:
 	# start a fake vara node
 	# gear --chain vara --tmp --bootnodes /dns/example.com/tcp/443/wss/p2p/12D3KooWAFZAGPKdYL597PJcLtK2eMeBphZc8a9iZpAwFgwh87ph
@@ -93,3 +95,18 @@ dot:
 	# start a fake dot node
 	# polkadot --chain polkadot --tmp --bootnodes /dns/example.com/tcp/443/wss/p2p/12D3KooWS1x9zSqNtK5zSRzMCtihYvG6pSBzVwuaFfrgfMA79iRs
 	DOMAIN=/dot PID_SEED=dot DHT=/91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3/kad /tmp/bootstrap
+
+pas:
+	# start a fake paseo asset hub node
+	DOMAIN=/pas PID_SEED=pas DHT=/d6eec26135305a8ad257a20d003357284c8aa03d0bdb2b357ab0a22371e11ef2/kad /tmp/bootstrap /dns/asset-hub-paseo-bootnode.turboflakes.io/tcp/30430/wss/p2p/12D3KooWJzfVkdDnKfn2hQ1c3ysrbmReTjVKrEBHkdwgZThbB1BM
+
+# identify protocol
+#
+# /ipfs/id/1.0.0
+# /ipfs/id/push/1.0.0
+#
+# Get remote peer advertised addresses
+
+# constella for terminal
+#
+# /xterm/<pid>
