@@ -11,7 +11,7 @@ require (
 	github.com/multiformats/go-multiaddr-fmt v0.1.0
 	github.com/stretchr/testify v1.11.1
 	github.com/webteleport/utils v0.2.19
-	github.com/webteleport/webteleport v0.5.43-alpha.5
+	github.com/webteleport/webteleport v0.5.43-alpha.6
 )
 
 require (
