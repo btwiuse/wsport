@@ -2,6 +2,8 @@ module github.com/btwiuse/wsport/cmd
 
 go 1.25.7
 
+replace github.com/libp2p/go-libp2p => github.com/btwiuse/go-libp2p v0.33.3
+
 replace github.com/btwiuse/wsport v0.0.8 => ..
 
 require (
@@ -32,6 +34,7 @@ require (
 	github.com/btwiuse/tags v0.0.2 // indirect
 	github.com/btwiuse/version v0.0.2 // indirect
 	github.com/btwiuse/wsconn v0.0.6 // indirect
+	github.com/btwiuse/wsdial v0.1.0 // indirect
 	github.com/btwiuse/x-parity-wss v0.0.6 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
@@ -142,7 +145,7 @@ require (
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/webteleport/utils v0.2.19 // indirect
-	github.com/webteleport/webteleport v0.5.43-alpha.4 // indirect
+	github.com/webteleport/webteleport v0.5.43-alpha.6 // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.1 // indirect
