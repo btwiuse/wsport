@@ -4,7 +4,7 @@ go 1.25.7
 
 require (
 	github.com/btwiuse/wsconn v0.0.6
-	github.com/btwiuse/wsdial v0.1.0
+	github.com/btwiuse/wsdial v0.1.1
 	github.com/btwiuse/x-parity-wss v0.0.6
 	github.com/libp2p/go-libp2p v0.48.0
 	github.com/multiformats/go-multiaddr v0.16.1
@@ -26,6 +26,7 @@ require (
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/dunglas/httpsfv v1.1.0 // indirect
+	github.com/ebi-yade/altsvc-go v0.1.2-0.20220921153119-0c9cfefbad86 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/flynn/noise v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -90,6 +91,7 @@ require (
 	github.com/quic-go/webtransport-go v0.10.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/webtransport/webtransport v0.0.1 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/fx v1.24.0 // indirect

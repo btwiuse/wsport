@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/libp2p/go-libp2p/core/transport"
-	"github.com/webteleport/webteleport/transport/websocket"
+	"github.com/webteleport/webteleport"
 	"github.com/webteleport/utils"
 
 	"github.com/btwiuse/wsconn"
@@ -59,9 +59,9 @@ func newListener(a ma.Multiaddr, tlsConf *tls.Config) (*listener, error) {
 	if err != nil {
 		return nil, err
 	}
-	scheme := "ws"
+	scheme := "http"
 	if parsed.isWSS {
-		scheme = "wss"
+		scheme = "https"
 	}
 
 	var nl net.Listener
@@ -75,8 +75,8 @@ func newListener(a ma.Multiaddr, tlsConf *tls.Config) (*listener, error) {
 		}
 	} else {
 		// dial remote
-		relayAddr := fmt.Sprintf("%s://%s%s?x-websocket-upgrade=1", scheme, lnaddr, parsed.path)
-		nl, err = websocket.Listen(context.Background(), relayAddr)
+		relayAddr := fmt.Sprintf("%s://%s%s", scheme, lnaddr, parsed.path)
+		nl, err = webteleport.Listen(context.Background(), relayAddr)
 		if err != nil {
 			return nil, err
 		}
