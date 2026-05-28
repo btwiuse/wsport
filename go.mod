@@ -4,8 +4,8 @@ go 1.25.7
 
 require (
 	github.com/btwiuse/wsconn v0.0.6
+	github.com/btwiuse/wsdial v0.1.0
 	github.com/btwiuse/x-parity-wss v0.0.6
-	github.com/coder/websocket v1.8.14
 	github.com/libp2p/go-libp2p v0.48.0
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/multiformats/go-multiaddr-fmt v0.1.0
@@ -21,6 +21,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btwiuse/version v0.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/coder/websocket v1.8.14 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect

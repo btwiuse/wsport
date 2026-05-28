@@ -8,6 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/transport"
 
+	"github.com/btwiuse/wsdial"
 	wsx "github.com/btwiuse/x-parity-wss"
 	ma "github.com/multiformats/go-multiaddr"
 	mafmt "github.com/multiformats/go-multiaddr-fmt"
@@ -189,7 +190,7 @@ func (t *WebsocketTransport) maDial(ctx context.Context, raddr ma.Multiaddr) (ma
 		wsurl.Host = sni + ":" + wsurl.Port()
 	}
 
-	wsconn, err := DialConn(ctx, wsurl.String(), nil)
+	wsconn, err := wsdial.Dial(ctx, wsurl, nil)
 	if err != nil {
 		return nil, err
 	}
