@@ -34,7 +34,7 @@ require (
 	github.com/btwiuse/tags v0.0.2 // indirect
 	github.com/btwiuse/version v0.0.2 // indirect
 	github.com/btwiuse/wsconn v0.0.6 // indirect
-	github.com/btwiuse/wsdial v0.1.1 // indirect
+	github.com/btwiuse/wsdial v0.1.2 // indirect
 	github.com/btwiuse/x-parity-wss v0.0.6 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
@@ -64,6 +64,7 @@ require (
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/yamux v0.1.3-0.20260522072409-90aa224fb777 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/ipfs/boxo v0.39.0 // indirect

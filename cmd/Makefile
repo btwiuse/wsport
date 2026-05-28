@@ -11,6 +11,8 @@ build:
 	go build -v -o out/ ./pid_seed
 	go build -v -o out/ ./proxy
 	go build -v -o out/ ./reconnect
+	go build -v -o out/ ./wsdial
+	go build -v -o out/ ./wsdial2
 
 build-wasm:
 	GOOS=js GOARCH=wasm go build -v -o out/basic.wasm ./basic/
@@ -23,11 +25,20 @@ build-wasm:
 	GOOS=js GOARCH=wasm go build -v -o out/pid_seed.wasm ./pid_seed/
 	GOOS=js GOARCH=wasm go build -v -o out/proxy.wasm ./proxy/
 	GOOS=js GOARCH=wasm go build -v -o out/reconnect.wasm ./reconnect/
+	GOOS=js GOARCH=wasm go build -v -o out/wsdial.wasm ./wsdial/
+	GOOS=js GOARCH=wasm go build -v -o out/wsdial2.wasm ./wsdial2/
 
 patch:
 	# patch for termux
 	sudo sed -i -e 's,\tlog.Errorw,\t// log.Errorw,g' ~/go/pkg/mod/github.com/libp2p/go-libp2p\@v0.37.0/p2p/host/basic/basic_host.go
 	cat ~/go/pkg/mod/github.com/libp2p/go-libp2p\@v0.37.0/p2p/host/basic/basic_host.go | grep log.Errorw
+
+wsd:
+	# Compare native ws transport and wsport, useful for comparison / debugging
+	# tcping -l /ip4/0.0.0.0/tcp/60003/ws
+	go run ./wsdial/ /ip4/127.0.0.1/tcp/60003/ws/p2p/12D3KooWK3YY84JVi2VjvGLsNDnruqRoi8xfDVoQFpW246gSyMf1
+	go run ./wsdial2/ /ip4/127.0.0.1/tcp/60003/ws/p2p/12D3KooWK3YY84JVi2VjvGLsNDnruqRoi8xfDVoQFpW246gSyMf1
+
 bas:
 	# Create a libp2p.Host and print the peer id
 	./out/basic
