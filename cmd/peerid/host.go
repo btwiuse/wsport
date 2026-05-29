@@ -14,15 +14,10 @@ import (
 )
 
 func newHost(addr string) (host.Host, error) {
-	identity, err := p2pid.PersistentIdentity()
-	if err != nil {
-		return nil, err
-	}
-
 	return libp2p.New(
 		libp2p.ProtocolVersion(os.Getenv("PROTOCOL_VERSION")),
 		libp2p.UserAgent(os.Getenv("USER_AGENT")),
-		identity,
+		p2pid.FromEnv(p2pid.PID_SEED),
 		libp2p.Transport(wsport.New),
 		wsport.ListenAddrStrings(addr),
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {

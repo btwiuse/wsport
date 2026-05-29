@@ -8,7 +8,7 @@ replace github.com/btwiuse/wsport => ..
 
 require (
 	github.com/btwiuse/gost v0.0.4
-	github.com/btwiuse/p2pid v0.0.0
+	github.com/btwiuse/p2pid v0.0.1
 	github.com/btwiuse/wsport v0.1.0
 	github.com/ipfs/go-datastore v0.9.1
 	github.com/libp2p/go-libp2p v0.48.0

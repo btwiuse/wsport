@@ -30,16 +30,11 @@ import (
 func Run(args []string) error {
 	relayURL := cmd.RELAY
 
-	identity, err := p2pid.PersistentIdentity()
-	if err != nil {
-		return err
-	}
-
 	options := []libp2p.Option{
 		libp2p.ProtocolVersion(os.Getenv("PROTOCOL_VERSION")),
 		libp2p.UserAgent(os.Getenv("USER_AGENT")),
 		libp2p.Transport(wsport.New),
-		identity,
+		p2pid.FromEnv(p2pid.PID_SEED),
 	}
 
 	if len(args) == 0 {

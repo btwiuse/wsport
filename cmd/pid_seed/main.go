@@ -8,12 +8,7 @@ import (
 )
 
 func main() {
-	identity, err := p2pid.PersistentIdentity()
-	if err != nil {
-		panic(err)
-	}
-
-	host, err := libp2p.New(identity)
+	host, err := libp2p.New(p2pid.FromEnv(p2pid.PID_SEED))
 	if err != nil {
 		panic(err)
 	}
