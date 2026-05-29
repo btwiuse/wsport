@@ -4,12 +4,12 @@ go 1.25.7
 
 replace github.com/libp2p/go-libp2p => github.com/btwiuse/go-libp2p v0.33.3
 
-replace github.com/btwiuse/wsport v0.0.8 => ..
+replace github.com/btwiuse/wsport => ..
 
 require (
 	github.com/btwiuse/gost v0.0.4
 	github.com/btwiuse/p2pid v0.0.0
-	github.com/btwiuse/wsport v0.0.8
+	github.com/btwiuse/wsport v0.1.0
 	github.com/ipfs/go-datastore v0.9.1
 	github.com/libp2p/go-libp2p v0.48.0
 	github.com/libp2p/go-libp2p-kad-dht v0.40.0
@@ -33,7 +33,7 @@ require (
 	github.com/btwiuse/rng v0.0.1 // indirect
 	github.com/btwiuse/tags v0.0.2 // indirect
 	github.com/btwiuse/version v0.0.2 // indirect
-	github.com/btwiuse/wsconn v0.0.6 // indirect
+	github.com/btwiuse/wsconn v0.0.8 // indirect
 	github.com/btwiuse/wsdial v0.1.2 // indirect
 	github.com/btwiuse/x-parity-wss v0.0.6 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

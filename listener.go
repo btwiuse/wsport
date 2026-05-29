@@ -13,7 +13,7 @@ import (
 	"github.com/webteleport/webteleport"
 	"github.com/webteleport/utils"
 
-	"github.com/btwiuse/wsconn"
+	wsconn "github.com/btwiuse/wsconn/netws"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 )

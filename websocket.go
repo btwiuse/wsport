@@ -117,6 +117,10 @@ func (t *WebsocketTransport) Proxy() bool {
 	return false
 }
 
+func (t *WebsocketTransport) SkipResolve(_ context.Context, _ ma.Multiaddr) bool {
+	return true
+}
+
 func (t *WebsocketTransport) Resolve(_ context.Context, maddr ma.Multiaddr) ([]ma.Multiaddr, error) {
 	parsed, err := parseWebsocketMultiaddr(maddr)
 	if err != nil {

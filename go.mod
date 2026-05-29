@@ -3,7 +3,7 @@ module github.com/btwiuse/wsport
 go 1.25.7
 
 require (
-	github.com/btwiuse/wsconn v0.0.6
+	github.com/btwiuse/wsconn v0.0.8
 	github.com/btwiuse/wsdial v0.1.2
 	github.com/btwiuse/x-parity-wss v0.0.6
 	github.com/libp2p/go-libp2p v0.48.0
