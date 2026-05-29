@@ -76,9 +76,7 @@ func (p *ProxyServer) ListenAndServe() error {
 
 func (p *ProxyServer) Handle(conn net.Conn) {
 	defer conn.Close()
-	log.Println("Got a new conn!")
 	AutoHandler.Handle(conn)
-	log.Println("conn handled!")
 }
 
 func NewProxyClient(h host.Host, port int, dest peer.ID) *ProxyClient {

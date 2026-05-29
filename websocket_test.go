@@ -27,8 +27,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/transport"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	tptu "github.com/libp2p/go-libp2p/p2p/net/upgrader"
-	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	"github.com/libp2p/go-libp2p/p2p/security/insecure"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	ttransport "github.com/libp2p/go-libp2p/p2p/transport/testsuite"
 
 	wsx "github.com/btwiuse/x-parity-wss"

@@ -20,9 +20,6 @@ func Notify(host host.Host, relayMa ma.Multiaddr) {
 				"ma", fmt.Sprintf("%s/p2p/%s", a, host.ID()),
 				// "localAddrs", host.Addrs(),
 			)
-			for i, addr := range host.Addrs() {
-				log.Println("localAddr", i, addr)
-			}
 		},
 		ListenCloseF: func(n network.Network, a ma.Multiaddr) {
 			slog.Info(
@@ -30,9 +27,6 @@ func Notify(host host.Host, relayMa ma.Multiaddr) {
 				"ma", fmt.Sprintf("%s/p2p/%s", a, host.ID()),
 				// "localAddrs", host.Addrs(),
 			)
-			for i, addr := range host.Addrs() {
-				log.Println("localAddr", i, addr)
-			}
 			for i := 0; ; i++ {
 				err := n.Listen(relayMa)
 				if err == nil {
@@ -57,9 +51,6 @@ func Notify(host host.Host, relayMa ma.Multiaddr) {
 			UpdateUniquePeers(host)
 			log.Println("peer count", len(host.Peerstore().Peers()), "unique", CountUniquePeers())
 			return
-			for i, addr := range host.Peerstore().Peers() {
-				log.Println("peer", i, addr, n.Connectedness(addr).String())
-			}
 		},
 		DisconnectedF: func(n network.Network, c network.Conn) {
 			slog.Info(
@@ -77,9 +68,6 @@ func Notify(host host.Host, relayMa ma.Multiaddr) {
 			UpdateUniquePeers(host)
 			log.Println("peer count", len(host.Peerstore().Peers()), "unique", CountUniquePeers())
 			return
-			for i, addr := range host.Peerstore().Peers() {
-				log.Println("peer", i, addr, n.Connectedness(addr).String())
-			}
 		},
 	}
 

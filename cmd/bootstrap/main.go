@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -120,29 +119,10 @@ func Run(args []string) error {
 	}
 
 	return nil
-
-	go func() {
-		for {
-			rt := ipfsdht.RoutingTable()
-			for i, p := range rt.ListPeers() {
-				log.Println("dht peer", i, p)
-			}
-			time.Sleep(5 * time.Second)
-			continue
-			println("refreshing routing table")
-			if err := <-ipfsdht.ForceRefresh(); err != nil {
-				log.Println(err)
-				time.Sleep(5 * time.Second)
-			}
-		}
-	}()
-
-	return nil
 }
 
 func MatchUnknownProtocol(h host.Host) {
 	matcherFunc := func(p protocol.ID) bool {
-		fmt.Printf("Catch-all matcher called for protocol: %s\n", p)
 		return true
 	}
 

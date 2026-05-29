@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/libp2p/go-libp2p/core/transport"
-	"github.com/webteleport/webteleport"
 	"github.com/webteleport/utils"
+	"github.com/webteleport/webteleport"
 
 	wsconn "github.com/btwiuse/wsconn/netws"
 	ma "github.com/multiformats/go-multiaddr"
@@ -130,7 +130,6 @@ func (l *listener) serve() {
 
 func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	realIP := utils.RealIP(r)
-	fmt.Println("realIP:", realIP)
 	c, err := wsconn.Wrconn(w, r)
 	if err != nil {
 		fmt.Println("wrconn error:", err)
@@ -143,7 +142,6 @@ func (l *listener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	select {
 	// Add the connection to the incoming channel.
 	case l.incoming <- &ConnAddr{c, realIP}:
-		fmt.Println("incoming conn:", c.RemoteAddr())
 	// The listener has been closed, close the connection.
 	case <-l.closed:
 		fmt.Println("listener closed, close conn:", c.RemoteAddr())
