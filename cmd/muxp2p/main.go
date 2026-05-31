@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-
-	// "net"
 	"net/http"
 	"os"
 	"time"
@@ -15,15 +13,17 @@ import (
 	"github.com/btwiuse/p2pid"
 	"github.com/btwiuse/wsport"
 	"github.com/libp2p/go-libp2p"
-
-	// "github.com/webteleport/wtf"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/transport"
 	"github.com/webteleport/webteleport"
 )
 
-func main() {
-	relay := cmp.Or(os.Getenv("RELAY"), "https://example.com")
-	p2pPath := cmp.Or(os.Getenv("P2P_PATH"), "/p2p")
+var (
+	RELAY   = cmp.Or(os.Getenv("RELAY"), "https://example.com")
+	p2pPath = "/"
+)
 
+func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -47,36 +47,43 @@ func main() {
 		})
 	})
 
+	// Create libp2p host with a transport that we can reference.
+	var tpt *wsport.WebsocketTransport
 	host, err := libp2p.New(
 		p2pid.FromEnv(p2pid.PID_SEED),
-		libp2p.Transport(wsport.New, wsport.WithMux(mux, p2pPath)),
+		libp2p.Transport(func(u transport.Upgrader, rcmgr network.ResourceManager) (*wsport.WebsocketTransport, error) {
+			var err error
+			tpt, err = wsport.New(u, rcmgr)
+			return tpt, err
+		}),
 	)
 	if err != nil {
 		log.Fatalf("failed to create libp2p host: %v", err)
 	}
 	defer host.Close()
 
-	log.Printf("peer ID: %s", host.ID())
-	log.Printf("p2p WebSocket mounted at %s", p2pPath)
-	log.Printf("health check at /healthz")
+	p2pPath = "/p2p/" + host.ID().String()
 
-	ln, err := webteleport.Listen(context.Background(), relay)
+	// Mount the WebSocket handler on the shared mux.
+	mux.Handle(p2pPath, tpt.WebSocketHandler())
+
+	ln, err := webteleport.Listen(context.Background(), RELAY)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	scheme := "ws"
-	if ln.Addr().Network() == "https" {
-		scheme = "wss"
-	}
-
-	maddr := fmt.Sprintf("%s://%s%s", scheme, ln.Addr(), p2pPath)
+	maddr := fmt.Sprintf("%s://%s%s", ln.Addr().Network(), ln.Addr(), p2pPath)
 	listenMa, err := wsport.FromString(maddr)
+	if err != nil {
+		log.Fatalf("failed to parse multiaddr: %v", err)
+	}
 
 	if err := host.Network().Listen(listenMa); err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	log.Printf("peer ID: %s", host.ID())
+	log.Printf("p2p WebSocket mounted at %s", p2pPath)
 	log.Println(listenMa)
 	log.Printf("listening addresses: %v", host.Addrs())
 	log.Println("listening on", ln.Addr())

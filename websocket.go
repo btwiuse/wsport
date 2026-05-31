@@ -16,12 +16,6 @@ import (
 	manet "github.com/multiformats/go-multiaddr/net"
 )
 
-// Mux is any type that accepts http.Handler registration by pattern.
-// http.ServeMux implements this interface.
-type Mux interface {
-	Handle(pattern string, handler http.Handler)
-}
-
 var dialMatcher = mafmt.And(
 	mafmt.Or(mafmt.IP, mafmt.DNS),
 	mafmt.Base(ma.P_TCP),
@@ -77,25 +71,24 @@ func WithTLSClientConfig(c *tls.Config) Option {
 }
 
 // WithTLSConfig sets a TLS configuration for the WebSocket listener.
-// WithMux configures the transport to register its WebSocket upgrade handler
-// on the given Mux at the specified path, instead of starting its own
-// HTTP server. This allows sharing a port and mux with other HTTP handlers.
-//
-// When this option is used, Listen determines the listener address from the
-// multiaddr argument. The path parameter controls where the WebSocket handler
-// is mounted (e.g., "/p2p").
-func WithMux(mux Mux, path string) Option {
+func WithTLSConfig(conf *tls.Config) Option {
 	return func(t *WebsocketTransport) error {
-		t.mux = mux
-		t.muxPath = path
+		t.tlsConf = conf
 		return nil
 	}
 }
 
-// WithTLSConfig sets a TLS configuration for the WebSocket listener.
-func WithTLSConfig(conf *tls.Config) Option {
+// Mux is any type that accepts http.Handler registration by pattern.
+// http.ServeMux implements this interface.
+type Mux interface {
+	Handle(pattern string, handler http.Handler)
+}
+
+// WithMux is a convenience option that calls WebSocketHandler and registers
+// the returned handler on the given Mux at the given path.
+func WithMux(mux Mux, path string) Option {
 	return func(t *WebsocketTransport) error {
-		t.tlsConf = conf
+		mux.Handle(path, t.WebSocketHandler())
 		return nil
 	}
 }
@@ -108,8 +101,8 @@ type WebsocketTransport struct {
 	tlsClientConf *tls.Config
 	tlsConf       *tls.Config
 
-	mux     Mux
-	muxPath string
+	handlerLn       *muxListener
+	upgradeListener transport.Listener
 }
 
 var _ transport.Transport = (*WebsocketTransport)(nil)
@@ -229,9 +222,31 @@ func (t *WebsocketTransport) maDial(ctx context.Context, raddr ma.Multiaddr) (ma
 	return mnc, nil
 }
 
+// WebSocketHandler returns an http.Handler that upgrades HTTP connections
+// to WebSocket for use with this transport. Use it to mount the WebSocket
+// upgrade handler on your own HTTP server or mux:
+//
+//	mux.Handle("/p2p", tpt.WebSocketHandler())
+//	http.Serve(ln, mux)
+//
+// The upgrade pipeline starts immediately — connections work even without
+// a subsequent Listen call. Listen is optional and only registers the
+// listener address for libp2p peer discovery.
+func (t *WebsocketTransport) WebSocketHandler() http.Handler {
+	ln := newMuxListener()
+	t.handlerLn = ln
+	if t.upgrader != nil {
+		t.upgradeListener = t.upgrader.UpgradeListener(t, ln)
+	}
+	return ln
+}
+
 func (t *WebsocketTransport) maListen(a ma.Multiaddr) (manet.Listener, error) {
-	if t.mux != nil {
-		return newMuxListener(a, t.tlsConf, t.mux, t.muxPath)
+	if t.handlerLn != nil {
+		if err := t.handlerLn.updateAddr(a); err != nil {
+			return nil, err
+		}
+		return t.handlerLn, nil
 	}
 	l, err := newListener(a, t.tlsConf)
 	if err != nil {
@@ -242,6 +257,11 @@ func (t *WebsocketTransport) maListen(a ma.Multiaddr) (manet.Listener, error) {
 }
 
 func (t *WebsocketTransport) Listen(a ma.Multiaddr) (transport.Listener, error) {
+	if t.handlerLn != nil {
+		// Handler mode: return a listener scoped to this address so swarm
+		// can track multiple Listen calls independently.
+		return &addrListener{Listener: t.upgradeListener, addr: a}, nil
+	}
 	malist, err := t.maListen(a)
 	if err != nil {
 		return nil, err

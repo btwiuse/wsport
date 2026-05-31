@@ -236,27 +236,29 @@ type muxListener struct {
 	addr     net.Addr
 	incoming chan *ConnAddr
 	closed   chan struct{}
-	mux      Mux
-	path     string
 }
 
-// newMuxListener registers a WebSocket upgrade handler on an existing Mux
-// instead of creating a net.Listener and HTTP server. The address from the
-// multiaddr is used only to construct the listener's Multiaddr() for libp2p
-// address discovery — no actual network listening happens here. The caller
-// must start an HTTP server on the given Mux separately.
-func newMuxListener(a ma.Multiaddr, tlsConf *tls.Config, mux Mux, path string) (*muxListener, error) {
+// newMuxListener creates a muxListener with no address assigned yet.
+// Call updateAddr to set the address from a Listen multiaddr.
+func newMuxListener() *muxListener {
+	return &muxListener{
+		incoming: make(chan *ConnAddr),
+		closed:   make(chan struct{}),
+	}
+}
+
+// updateAddr assigns the listener address from a Listen multiaddr.
+func (l *muxListener) updateAddr(a ma.Multiaddr) error {
 	parsed, err := parseWebsocketMultiaddr(a)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_, lnaddr, err := manet.DialArgs(parsed.restMultiaddr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Build laddr from the original multiaddr so DNS names are preserved.
 	var laddr ma.Multiaddr
 	if parsed.path != "" {
 		wsProto := "x-parity-ws"
@@ -271,11 +273,9 @@ func newMuxListener(a ma.Multiaddr, tlsConf *tls.Config, mux Mux, path string) (
 		laddr = parsed.restMultiaddr.Encapsulate(wsComponent)
 	}
 
-	// Build a best-effort net.Addr for Addr(). For IP addresses use a proper
-	// TCPAddr; for DNS hostnames use a simple string address.
 	host, portStr, err := net.SplitHostPort(lnaddr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	port, _ := strconv.Atoi(portStr)
 	var addr net.Addr
@@ -285,18 +285,10 @@ func newMuxListener(a ma.Multiaddr, tlsConf *tls.Config, mux Mux, path string) (
 		addr = wsconn.NewAddr("tcp", lnaddr)
 	}
 
-	ln := &muxListener{
-		isWss:    parsed.isWSS,
-		laddr:    laddr,
-		addr:     addr,
-		incoming: make(chan *ConnAddr),
-		closed:   make(chan struct{}),
-		mux:      mux,
-		path:     path,
-	}
-
-	mux.Handle(path, ln)
-	return ln, nil
+	l.isWss = parsed.isWSS
+	l.laddr = laddr
+	l.addr = addr
+	return nil
 }
 
 func (l *muxListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -350,4 +342,15 @@ func (l *muxListener) Addr() net.Addr {
 
 func (l *muxListener) Multiaddr() ma.Multiaddr {
 	return l.laddr
+}
+
+// addrListener wraps a shared transport.Listener and overrides Multiaddr
+// so each Listen call returns a unique listener scoped to its address.
+type addrListener struct {
+	transport.Listener
+	addr ma.Multiaddr
+}
+
+func (l *addrListener) Multiaddr() ma.Multiaddr {
+	return l.addr
 }
