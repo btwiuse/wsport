@@ -44,4 +44,8 @@ http.Serve(ln, mux)
 mux.Handle("/p2p", tpt.WebSocketHandler())
 ```
 
+**Order matters:** `WebSocketHandler` must be called **before** `Listen`.
+If `Listen` is called first, `handlerLn` is nil and it falls through to
+the normal `net.Listener` path instead.
+
 See [cmd/muxp2p](cmd/muxp2p/README.md) for a complete example.
