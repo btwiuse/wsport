@@ -3,6 +3,7 @@ package wsport
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
 
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -14,6 +15,12 @@ import (
 	mafmt "github.com/multiformats/go-multiaddr-fmt"
 	manet "github.com/multiformats/go-multiaddr/net"
 )
+
+// Mux is any type that accepts http.Handler registration by pattern.
+// http.ServeMux implements this interface.
+type Mux interface {
+	Handle(pattern string, handler http.Handler)
+}
 
 var dialMatcher = mafmt.And(
 	mafmt.Or(mafmt.IP, mafmt.DNS),
@@ -70,6 +77,22 @@ func WithTLSClientConfig(c *tls.Config) Option {
 }
 
 // WithTLSConfig sets a TLS configuration for the WebSocket listener.
+// WithMux configures the transport to register its WebSocket upgrade handler
+// on the given Mux at the specified path, instead of starting its own
+// HTTP server. This allows sharing a port and mux with other HTTP handlers.
+//
+// When this option is used, Listen determines the listener address from the
+// multiaddr argument. The path parameter controls where the WebSocket handler
+// is mounted (e.g., "/p2p").
+func WithMux(mux Mux, path string) Option {
+	return func(t *WebsocketTransport) error {
+		t.mux = mux
+		t.muxPath = path
+		return nil
+	}
+}
+
+// WithTLSConfig sets a TLS configuration for the WebSocket listener.
 func WithTLSConfig(conf *tls.Config) Option {
 	return func(t *WebsocketTransport) error {
 		t.tlsConf = conf
@@ -84,6 +107,9 @@ type WebsocketTransport struct {
 
 	tlsClientConf *tls.Config
 	tlsConf       *tls.Config
+
+	mux     Mux
+	muxPath string
 }
 
 var _ transport.Transport = (*WebsocketTransport)(nil)
@@ -204,6 +230,9 @@ func (t *WebsocketTransport) maDial(ctx context.Context, raddr ma.Multiaddr) (ma
 }
 
 func (t *WebsocketTransport) maListen(a ma.Multiaddr) (manet.Listener, error) {
+	if t.mux != nil {
+		return newMuxListener(a, t.tlsConf, t.mux, t.muxPath)
+	}
 	l, err := newListener(a, t.tlsConf)
 	if err != nil {
 		return nil, err

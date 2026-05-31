@@ -31,6 +31,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	ttransport "github.com/libp2p/go-libp2p/p2p/transport/testsuite"
 
+	"github.com/btwiuse/wsdial"
 	wsx "github.com/btwiuse/x-parity-wss"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/require"
@@ -84,11 +85,12 @@ func lastComponent(t *testing.T, a ma.Multiaddr) ma.Multiaddr {
 	t.Helper()
 	_, wscomponent := ma.SplitLast(a)
 	require.NotNil(t, wscomponent)
-	if wscomponent.Equal(wsComponent) {
-		return wsComponent
+	s := wscomponent.String()
+	if s == "/ws" {
+		return ma.StringCast("/ws")
 	}
-	if wscomponent.Equal(wssComponent) {
-		return wssComponent
+	if s == "/wss" {
+		return ma.StringCast("/wss")
 	}
 	t.Fatal("expected a ws or wss component")
 	return nil
@@ -561,4 +563,51 @@ func TestResolveMultiaddr(t *testing.T) {
 			require.Equal(t, expectedMA, addrs[0].String())
 		})
 	}
+}
+
+func TestMux(t *testing.T) {
+	// Test that WithMux correctly registers the WebSocket handler
+	// on an external Mux, rather than starting its own HTTP server.
+	mux := http.NewServeMux()
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer ln.Close()
+
+	port := ln.Addr().(*net.TCPAddr).Port
+	serverAddr := ma.StringCast(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/ws", port))
+
+	tpt, err := New(nil, nil, WithMux(mux, "/"))
+	require.NoError(t, err)
+
+	// Use maListen directly to get the raw manet.Listener (bypasses
+	// the libp2p upgrader for isolation). The handler is registered
+	// on the shared mux.
+	ml, err := tpt.maListen(serverAddr)
+	require.NoError(t, err)
+	defer ml.Close()
+
+	go http.Serve(ln, mux)
+
+	// Dial raw WebSocket using wsdial
+	msg := []byte("HELLO FROM MUX")
+	wsurl, err := parseMultiaddr(ml.Multiaddr())
+	require.NoError(t, err)
+
+	rawConn, err := wsdial.Dial(context.Background(), wsurl, nil)
+	require.NoError(t, err)
+	defer rawConn.Close()
+
+	// Accept on the mux listener
+	serverConn, err := ml.Accept()
+	require.NoError(t, err)
+
+	// Exchange data through the WebSocket
+	_, err = rawConn.Write(msg)
+	require.NoError(t, err)
+
+	out := make([]byte, len(msg))
+	_, err = io.ReadFull(serverConn, out)
+	require.NoError(t, err)
+	require.Equal(t, msg, out)
 }

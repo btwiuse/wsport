@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/libp2p/go-libp2p/core/transport"
@@ -225,4 +226,128 @@ func (l *transportListener) Accept() (transport.CapableConn, error) {
 		return nil, err
 	}
 	return &capableConn{CapableConn: conn}, nil
+}
+
+// muxListener implements manet.Listener by registering its ServeHTTP on an
+// existing http.ServeMux, rather than owning its own net.Listener and HTTP server.
+type muxListener struct {
+	isWss    bool
+	laddr    ma.Multiaddr
+	addr     net.Addr
+	incoming chan *ConnAddr
+	closed   chan struct{}
+	mux      Mux
+	path     string
+}
+
+// newMuxListener registers a WebSocket upgrade handler on an existing Mux
+// instead of creating a net.Listener and HTTP server. The address from the
+// multiaddr is used only to construct the listener's Multiaddr() for libp2p
+// address discovery — no actual network listening happens here. The caller
+// must start an HTTP server on the given Mux separately.
+func newMuxListener(a ma.Multiaddr, tlsConf *tls.Config, mux Mux, path string) (*muxListener, error) {
+	parsed, err := parseWebsocketMultiaddr(a)
+	if err != nil {
+		return nil, err
+	}
+
+	_, lnaddr, err := manet.DialArgs(parsed.restMultiaddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build laddr from the original multiaddr so DNS names are preserved.
+	var laddr ma.Multiaddr
+	if parsed.path != "" {
+		wsProto := "x-parity-ws"
+		if parsed.isWSS {
+			wsProto = "x-parity-wss"
+		}
+		laddr = parsed.restMultiaddr.Encapsulate(
+			ma.StringCast(fmt.Sprintf("/%s/%s", wsProto, url.QueryEscape(parsed.path))))
+	} else if parsed.isWSS {
+		laddr = parsed.restMultiaddr.Encapsulate(wssComponent)
+	} else {
+		laddr = parsed.restMultiaddr.Encapsulate(wsComponent)
+	}
+
+	// Build a best-effort net.Addr for Addr(). For IP addresses use a proper
+	// TCPAddr; for DNS hostnames use a simple string address.
+	host, portStr, err := net.SplitHostPort(lnaddr)
+	if err != nil {
+		return nil, err
+	}
+	port, _ := strconv.Atoi(portStr)
+	var addr net.Addr
+	if ip := net.ParseIP(host); ip != nil {
+		addr = &net.TCPAddr{IP: ip, Port: port}
+	} else {
+		addr = wsconn.NewAddr("tcp", lnaddr)
+	}
+
+	ln := &muxListener{
+		isWss:    parsed.isWSS,
+		laddr:    laddr,
+		addr:     addr,
+		incoming: make(chan *ConnAddr),
+		closed:   make(chan struct{}),
+		mux:      mux,
+		path:     path,
+	}
+
+	mux.Handle(path, ln)
+	return ln, nil
+}
+
+func (l *muxListener) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	realIP := utils.RealIP(r)
+	c, err := wsconn.Wrconn(w, r)
+	if err != nil {
+		fmt.Println("wrconn error:", err)
+		return
+	}
+	addr := wsconn.NewAddr("tcp", fmt.Sprintf("%s:%d", realIP, 9527))
+	c = wsconn.ConnWithAddr(c, addr)
+
+	select {
+	case l.incoming <- &ConnAddr{c, realIP}:
+	case <-l.closed:
+		fmt.Println("listener closed, close conn:", c.RemoteAddr())
+		c.Close()
+	}
+}
+
+func (l *muxListener) Accept() (manet.Conn, error) {
+	select {
+	case c, ok := <-l.incoming:
+		if !ok {
+			return nil, transport.ErrListenerClosed
+		}
+		mnc := &MyConn{
+			Conn:   c.Conn,
+			Addr:   c.Addr,
+			Secure: l.isWss,
+		}
+		return mnc, nil
+	case <-l.closed:
+		return nil, transport.ErrListenerClosed
+	}
+}
+
+func (l *muxListener) Close() error {
+	select {
+	case <-l.closed:
+		return transport.ErrListenerClosed
+	default:
+		close(l.closed)
+	}
+	return nil
+}
+
+func (l *muxListener) Addr() net.Addr {
+	return l.addr
+}
+
+func (l *muxListener) Multiaddr() ma.Multiaddr {
+	return l.laddr
 }
