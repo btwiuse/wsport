@@ -12,6 +12,7 @@ build:
 	go build -v -o out/ ./proxy
 	go build -v -o out/ ./reconnect
 	go build -v -o out/ ./wsdial
+	go build -v -o out/ ./sign
 	go build -v -o out/ ./wsdial2
 
 build-wasm:
@@ -25,6 +26,7 @@ build-wasm:
 	GOOS=js GOARCH=wasm go build -v -o out/pid_seed.wasm ./pid_seed/
 	GOOS=js GOARCH=wasm go build -v -o out/proxy.wasm ./proxy/
 	GOOS=js GOARCH=wasm go build -v -o out/reconnect.wasm ./reconnect/
+	GOOS=js GOARCH=wasm go build -v -o out/sign.wasm ./sign/
 	GOOS=js GOARCH=wasm go build -v -o out/wsdial.wasm ./wsdial/
 	GOOS=js GOARCH=wasm go build -v -o out/wsdial2.wasm ./wsdial2/
 
@@ -59,6 +61,14 @@ hos:
 	# Note: listener will not reconnect when internet reconnects
 	# see reconnect for that
 	PID_SEED=host ./out/host
+
+sig:
+	# Create a libp2p host and demonstrate crypto.PrivKey signing API
+	# - privKey.Sign() / pubKey.Verify()
+	# - MarshalPrivateKey / UnmarshalPrivateKey round-trip
+	# - GenerateEd25519Key for ephemeral keys
+	# - Tamper detection and wrong-key rejection
+	PID_SEED=sign ./out/sign
 
 pee:
 	# Relay with peer discovery, with persistent peerid from env seed (PID_SEED)
